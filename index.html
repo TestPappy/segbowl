@@ -90,8 +90,8 @@
         <p><input type="checkbox" id="redrawdrag" checked><label for="redrawdrag"><span></span>Redraw while
             dragging</label>
         <p>Units:
-            <input type="radio" name="unit" id="inch" value="inch"><label for="inch"><span></span>Inch</label>
-            <input type="radio" name="unit" id="mm" value="mm" checked><label for="mm"><span></span>mm</label></p>
+            <input type="radio" name="unit" id="inch" value="inch" checked><label for="inch"><span></span>Inch</label>
+            <input type="radio" name="unit" id="mm" value="mm"><label for="mm"><span></span>mm</label></p>
         <span id="rptprec" style="visibility:hidden">
             <p>Precision:</p>
             <div class="styled-select">
@@ -183,8 +183,14 @@
 </div>
 
 <canvas id="backcanvas" height="500" width="500" style="display: none"></canvas>
-<script src="js/three.min.js"></script>
-<script src="js/OrbitControls.js"></script>
-<script type="text/javascript" src="js/bowl.js"></script>
+<script type="importmap">
+    {
+        "imports": {
+            "three": "./js/three.module.js",
+            "OrbitControls": "./js/OrbitControls.js"
+        }
+    }
+</script>
+<script type="module" src="/js/bowl.js"></script>
 </body>
 </html>

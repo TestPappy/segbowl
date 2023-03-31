@@ -2,9 +2,11 @@
   (c) 2017, Collin J. Delker
   Released under the MIT License
 */
+import * as THREE from 'three';
+import { OrbitControls } from 'OrbitControls';
 
 (function() {
-    version = "0.1";
+    var version = "0.1";
 
     function dfltclrs() {
         var clrs = [];
@@ -145,7 +147,7 @@
         camlight.position.set(20,30,20);
         view3d.camera.add(camlight);
 
-        var controls  = new THREE.OrbitControls(view3d.camera, view3d.renderer.domElement);
+        var controls = new OrbitControls(view3d.camera, view3d.renderer.domElement);
         controls.target.set(0,4,0);
         controls.update();
         controls.addEventListener("change", render3D);
@@ -221,21 +223,21 @@
         for (var segidx=0; segidx<bowlprop.rings[ringidx].seglen.length; segidx++) {
             thetas.push(rotation);
             theta = Math.PI / bowlprop.rings[ringidx].segs * bowlprop.rings[ringidx].seglen[segidx];
-            x2 = bowlprop.rings[ringidx].xvals.max * Math.cos(theta)/Math.cos(maxtheta);  // cosines make different width segments meet at endpoints
-            x1 = (bowlprop.rings[ringidx].xvals.min) * Math.cos(theta);
-            y2 = x2 * Math.tan(theta);
-            y1 = (bowlprop.rings[ringidx].xvals.min) * Math.sin(theta);
+            var x2 = bowlprop.rings[ringidx].xvals.max * Math.cos(theta)/Math.cos(maxtheta);  // cosines make different width segments meet at endpoints
+            var x1 = (bowlprop.rings[ringidx].xvals.min) * Math.cos(theta);
+            var y2 = x2 * Math.tan(theta);
+            var y1 = (bowlprop.rings[ringidx].xvals.min) * Math.sin(theta);
             var trapz = [{x:x1, y:y1}, {x:x2,y:y2}, {x:x2,y:-y2}, {x:x1,y:-y1}];
             if (rotate) {
                 var rtrapz = [];
                 var toffset = bowlprop.rings[ringidx].theta; // + rotation;
                 for (var p=0; p<trapz.length; p++) {
                     // Complex-number magic to rotate segment around
-                    zx = Math.cos(theta + rotation + toffset);  // exp(j*theta*i) with j=complex
-                    zy = Math.sin(theta + rotation + toffset);
+                    var zx = Math.cos(theta + rotation + toffset);  // exp(j*theta*i) with j=complex
+                    var zy = Math.sin(theta + rotation + toffset);
 
-                    rx = trapz[p].x*zx - trapz[p].y*zy;  // Basically complex number multiplication
-                    ry = trapz[p].y*zx + trapz[p].x*zy;
+                    var rx = trapz[p].x*zx - trapz[p].y*zy;  // Basically complex number multiplication
+                    var ry = trapz[p].y*zx + trapz[p].x*zy;
                     rtrapz.push({x:rx, y:ry});
                 }
                 trapz = rtrapz;
@@ -257,7 +259,7 @@
         var points = [new THREE.Vector2(0,0), new THREE.Vector2(.1, 0)];
         for (var j=0; j<rpoint.length-1; j+=3) {    // Step through each bezier
             for (var t=0; t<=1; t+=1/bowlprop.curvesegs) {    // Each t-value
-                mt = Math.max(0, 1-t);
+                var mt = Math.max(0, 1-t);
                 points.push(new THREE.Vector2(
                     mt*mt*mt*(rpoint[j].x) + 3*t*mt*mt*(rpoint[j+1].x) + 3*t*t*mt*(rpoint[j+2].x) + t*t*t*(rpoint[j+3].x),
                     mt*mt*mt*(rpoint[j].y) + 3*t*mt*mt*(rpoint[j+1].y) + 3*t*t*mt*(rpoint[j+2].y) + t*t*t*(rpoint[j+3].y)));		
@@ -274,11 +276,11 @@
         var newcurve = [];
         var newcurve2 = [];
         for (var i = 0; i < curve.length-1; i++) {
-            dx = curve[i+1].x - curve[i].x;
-            dy = curve[i+1].y - curve[i].y;
-            dd = Math.sqrt(dx*dx+dy*dy);
-            kx = -dy/dd
-            ky = dx/dd;
+            var dx = curve[i+1].x - curve[i].x;
+            var dy = curve[i+1].y - curve[i].y;
+            var dd = Math.sqrt(dx*dx+dy*dy);
+            var kx = -dy/dd
+            var ky = dx/dd;
             newcurve.push(new THREE.Vector2(curve[i].x + offset * kx, curve[i].y + offset * ky));
             newcurve2.push(new THREE.Vector2(curve[i].x - offset * kx, curve[i].y - offset * ky));
         }
@@ -290,7 +292,7 @@
     }
 
     function screenToReal() {  // Entire path
-        npoint = [];
+        var npoint = [];
         for (var p in bowlprop.cpoint) {
         npoint.push(new THREE.Vector2(
                 (bowlprop.cpoint[p].x - view2d.canvas.width/2) / view2d.scale,
@@ -310,10 +312,10 @@
     }
 
     function splitRingY(curve) {  // Split the curve into separate curves for each ring, interpolating to get correct endpoints
-        y = 0;
-        curveparts = [];
+        var y = 0;
+        var curveparts = [];
         for (var i=0; i<bowlprop.rings.length; i++) {
-            segcurve = [];
+            var segcurve = [];
             if (i==0) {segcurve.push({x:curve[0].x, y:curve[0].y})}  // Always get first point
             for (var p=1; p<curve.length; p++) {
                 if (curve[p-1].y < y && curve[p].y > y+bowlprop.rings[i].height) {  // Make sure we don't skip over thin rings
@@ -352,7 +354,7 @@
 
     function drawSegProfile(ctx) {
         calcRings();
-        y = -bowlprop.thick/2;
+        var y = -bowlprop.thick/2;
         for (var i=0; i<bowlprop.rings.length; i++) {
             ctx.beginPath();
             if (i == ctrl.copyring) {
@@ -367,8 +369,8 @@
                 ctx.lineWidth = style.segs.width;
             }
             if (y<=bowlprop.height) {
-                p1 = realToScreen(bowlprop.rings[i].xvals.min, y);
-                p2 = realToScreen(bowlprop.rings[i].xvals.max, y+bowlprop.rings[i].height);
+                var p1 = realToScreen(bowlprop.rings[i].xvals.min, y);
+                var p2 = realToScreen(bowlprop.rings[i].xvals.max, y+bowlprop.rings[i].height);
                 ctx.rect(p1.x, p1.y, p2.x-p1.x, p2.y-p1.y);
                 ctx.stroke();
                 if (document.getElementById("showsegnum").checked) {
@@ -412,7 +414,7 @@
         ctx.beginPath();
         var point;
         for (var p=0; p<poly.length; p++) {
-            point = realToScreen(poly[p].x, poly[p].y, ofst=0);
+            point = realToScreen(poly[p].x, poly[p].y, 0);
             if (p==0) {
                 ctx.moveTo(point.x, point.y - ctx.canvas.height/2);
             } else {
@@ -425,17 +427,17 @@
     }
 
     function drawRing(ctx, selring) {
-        calcRingTrapz(selring, rotate=true);
+        calcRingTrapz(selring, true);
         for (var i=0; i<bowlprop.rings[selring].segs; i++) {
             ctx.strokeStyle = "#000";
             ctx.lineWidth = 2;
             ctx.fillStyle = bowlprop.rings[selring].clrs[i];
-            drawPoly(ctx, bowlprop.seltrapz[i], fill=true);
+            drawPoly(ctx, bowlprop.seltrapz[i], true);
         }
         for (var i=0; i<ctrl.selseg.length; i++) {
             ctx.strokeStyle = style.selseg.color;
             ctx.lineWidth = style.selseg.width;
-            drawPoly(ctx, bowlprop.seltrapz[ctrl.selseg[i]], fill=false);
+            drawPoly(ctx, bowlprop.seltrapz[ctrl.selseg[i]], false);
         }
         ctx.lineWidth = 1;
         ctx.strokeStyle = "#000";
@@ -513,7 +515,7 @@
 
     function build3D() {
         if (document.getElementById("canvas3d").style.display == 'none') {return}  // Don't calculate if not shown
-        curve = calcBezPath();
+        var curve = calcBezPath();
         calcRings();
         var offcurve = offsetCurve(curve, bowlprop.thick/2);
         for (var m=0; m<view3d.mesh.length; m++) {
@@ -523,12 +525,12 @@
         }
         view3d.mesh = [];
         
-        curvesegs = splitRingY(offcurve.c2);    // Outer wall
+        var curvesegs = splitRingY(offcurve.c2);    // Outer wall
         for (var i=0; i<curvesegs.length; i++) {
             if (curvesegs[i].length > 1) {
                 var tottheta = bowlprop.rings[i].theta;
                 for (var seg=0; seg<bowlprop.rings[i].segs; seg++) {
-                    theta = (2 * Math.PI / bowlprop.rings[i].segs ) * bowlprop.rings[i].seglen[seg];
+                    var theta = (2 * Math.PI / bowlprop.rings[i].segs ) * bowlprop.rings[i].seglen[seg];
                     var material = new THREE.MeshPhongMaterial({color: bowlprop.rings[i].clrs[seg]});
                     material.side = THREE.DoubleSide;
                     view3d.mesh.push(new THREE.Mesh(
@@ -544,7 +546,7 @@
             if (curvesegs[i].length > 1) {
                 tottheta = bowlprop.rings[i].theta;
                 for (var seg=0; seg<bowlprop.rings[i].segs; seg++) {
-                    theta = (2 * Math.PI / bowlprop.rings[i].segs) * bowlprop.rings[i].seglen[seg];
+                    var theta = (2 * Math.PI / bowlprop.rings[i].segs) * bowlprop.rings[i].seglen[seg];
                     var material = new THREE.MeshPhongMaterial({color: bowlprop.rings[i].clrs[seg]});
                     material.side = THREE.DoubleSide;
                     view3d.mesh.push(new THREE.Mesh(
@@ -583,7 +585,7 @@
     }
 
     function segClick(e) {
-        e = mousePos(e, view2d.canvas2);
+        var e = mousePos(e, view2d.canvas2);
         var dx, dy, r, theta, seg;
         dx = (e.x - view2d.centerx) / view2d.scale;
         dy =  (e.y - view2d.centerx) / view2d.scale;  // Always a square
@@ -709,8 +711,8 @@
         if (step == null) {step = ctrl.step}
 
         if (value == 0) {return '0"'}
-        numerator = Math.round(value / step);
-        denominator = 1/step;
+        var numerator = Math.round(value / step);
+        var denominator = 1/step;
         if (numerator == denominator) {return '1"'};
         var gcd = function gcd(a,b){
             return b ? gcd(b, a%b) : a;
@@ -734,7 +736,7 @@
     }
 
     function thickChange() {
-        slider = document.getElementById("inptThick");
+        var slider = document.getElementById("inptThick");
         bowlprop.thick = Number(slider.value);
         document.getElementById("valThick").innerHTML = reduce(slider.value);
         drawCanvas();
@@ -742,7 +744,7 @@
     }
 
     function padChange() {
-        slider = document.getElementById("inptPad");
+        var slider = document.getElementById("inptPad");
         bowlprop.pad = Number(slider.value);
         document.getElementById("valPad").innerHTML = reduce(slider.value);	
         drawCanvas();
@@ -981,9 +983,9 @@
     function getReportSegsList(ring) {
         var donesegs = [];
         var seginfo = []
-        calcRingTrapz(ring, rotate=false);
+        calcRingTrapz(ring, false);
         for (var seg=0; seg<bowlprop.rings[ring].segs; seg++) {
-            idx = donesegs.indexOf(bowlprop.rings[ring].seglen[seg]);
+            var idx = donesegs.indexOf(bowlprop.rings[ring].seglen[seg]);
             if (idx == -1) {
                 seginfo.push({theta: 180 / bowlprop.rings[ring].segs * bowlprop.rings[ring].seglen[seg],
                               outlen: 2 * bowlprop.seltrapz[seg][1].y,
@@ -1002,11 +1004,11 @@
 
     function updateRingInfo() {   // Ring info on main page
         if (document.getElementById("canvas2").style.display != "none" && ctrl.selring != null) {
-            step = 1 / parseInt(document.getElementById("rptfmt").value);
+            var step = 1 / parseInt(document.getElementById("rptfmt").value);
             var txt = ["Ring:", ctrl.selring.toString(), "<br>",
                        "Diameter:", reduce(bowlprop.rings[ctrl.selring].xvals.max * 2, step), "<br>",
                        "Thickness:", reduce(bowlprop.rings[ctrl.selring].height, step), '<br><hr align="left" width="20%">'];
-            seglist = getReportSegsList(ctrl.selring);
+            var seglist = getReportSegsList(ctrl.selring);
             for (var seg=0; seg<seglist.length; seg++) {
                 txt = txt.concat([
                                   "Segments:", seglist[seg].cnt, "<br>",
@@ -1024,7 +1026,7 @@
     }
     
     function genReport() {  // Full HTML report
-        step = 1 / parseInt(document.getElementById("rptfmt").value);
+        var step = 1 / parseInt(document.getElementById("rptfmt").value);
         var nwindow = window.open('', 'Report', 'height=800,width=1000');
         nwindow.document.write('<html><head><title>Bowl Report</title>');
         nwindow.document.write('<link rel="stylesheet" href="style.css">');
@@ -1038,8 +1040,8 @@
         nwindow.document.write(txt.join(''));
 
         for (var i=1; i<bowlprop.usedrings; i++) {
-            seglist = getReportSegsList(i);
-            txt = ['<tr><th rowspan="' + seglist.length + '">', i, '</th>',
+            var seglist = getReportSegsList(i);
+            var txt = ['<tr><th rowspan="' + seglist.length + '">', i, '</th>',
                    '<td>', reduce(bowlprop.rings[i].xvals.max*2, step), '</td>',
                    '<td>', reduce(bowlprop.rings[i].height, step), '</td>',
                    '<td>', (180 / Math.PI * bowlprop.rings[i].theta).toFixed(2).concat("&deg;"), '</td>'
@@ -1066,8 +1068,8 @@
 
         ctrl.selring = null,
         ctrl.selseg = [];
-        bcanvas = document.getElementById("backcanvas");
-        ctx = bcanvas.getContext("2d")
+        var bcanvas = document.getElementById("backcanvas");
+        var ctx = bcanvas.getContext("2d")
         ctx.canvas.width = view2d.canvas.width;
         ctx.canvas.height = view2d.canvas.height;
         clearCanvas(bcanvas, ctx);
@@ -1129,7 +1131,7 @@
         var clropts = document.createElement("p");
         for (var i in woodcolors) {
             if (i == woodcolors.length/2) {clropts.appendChild(document.createElement("br"));}
-            c = document.createElement("span");
+            var c = document.createElement("span");
             c.className = "clrsel";
             c.style.backgroundColor = woodcolors[i];
             c.draggable = "true";
@@ -1142,7 +1144,7 @@
         palette.appendChild(document.createElement("hr"));
         palette.appendChild(document.createTextNode("Palette: "));
         for (var i=0; i<btnpalette.length; i++) {
-            c = document.createElement("span");
+            var c = document.createElement("span");
             c.className = "tmppal";
             c.style.backgroundColor = btnpalette[i].style.backgroundColor;
             c.ondragover = dragover;

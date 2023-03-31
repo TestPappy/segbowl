@@ -1,12 +1,13 @@
-/* Collin's Bowl Designer
+/* Segmented Bowl Designer
   (c) 2017, Collin J. Delker
+  (c) 2023, Patrick Prill
   Released under the MIT License
 */
 import * as THREE from 'three';
 import { OrbitControls } from 'OrbitControls';
 
 (function() {
-    var version = "0.1";
+    var version = "0.2";
 
     function dfltclrs() {
         var clrs = [];

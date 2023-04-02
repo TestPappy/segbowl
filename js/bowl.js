@@ -5,18 +5,10 @@
 */
 import * as THREE from 'three';
 import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
-import * as common from './common'
+import { dfltclrs, dfltlens } from './common.mjs';
 
 (() => {
     var version = "0.2";
-
-    function dfltlens(cnt = 12) {
-        var len = [];
-        for (var i = 0; i < cnt; i++) {
-            len.push(1);
-        }
-        return len;
-    }
 
     var bowlprop = {
         radius: null,
@@ -25,7 +17,7 @@ import * as common from './common'
         pad: .125,
         cpoint: null,
         curvesegs: 50,
-        rings: [{ height: .5, segs: 12, clrs: common.dfltclrs(), seglen: dfltlens(), xvals: [], theta: 0 }],
+        rings: [{ height: .5, segs: 12, clrs: dfltclrs(), seglen: dfltlens(), xvals: [], theta: 0 }],
         usedrings: 1,
 
         seltrapz: null,
@@ -185,7 +177,7 @@ import * as common from './common'
             var x = []; // x-values within this ring
             var yidx = []; // INDEX of y-values in this ring
             if (bowlprop.rings.length <= i) { // Need a new ring
-                bowlprop.rings.push({ height: .75, segs: 12, clrs: common.dfltclrs(), seglen: dfltlens(), xvals: [], theta: 0 });
+                bowlprop.rings.push({ height: .75, segs: 12, clrs: dfltclrs(), seglen: dfltlens(), xvals: [], theta: 0 });
             }
             for (var p = 0; p < pathx1.length; p++) {
                 if (pathy1[p] > y && pathy1[p] < y + bowlprop.rings[i].height) { x.push(pathx1[p]); yidx.push(p); }

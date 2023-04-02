@@ -4,7 +4,7 @@
   Released under the MIT License
 */
 import * as THREE from 'three';
-import { OrbitControls } from 'OrbitControls';
+import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
 
 (function() {
     var version = "0.2";

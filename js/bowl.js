@@ -6,6 +6,7 @@
 import * as THREE from 'three';
 import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
 import { dfltclrs, dfltlens } from './common.mjs';
+import { screenToRealPoint } from './bowl_calculator.mjs';
 
 (() => {
     var version = "0.2";
@@ -294,13 +295,6 @@ import { dfltclrs, dfltlens } from './common.mjs';
                 (view2d.canvas.height - bowlprop.cpoint[p].y) / view2d.scale - .5)); // .5 to put at 0,0
         }
         return npoint;
-    }
-
-    function screenToRealPoint(x, y) {
-        return {
-            x: (x - view2d.canvas.width / 2) / view2d.scale,
-            y: (view2d.canvas.height - y) / view2d.scale - .5
-        };
     }
 
     function realToScreen(x, y, ofst = -.5) {
@@ -628,7 +622,7 @@ import { dfltclrs, dfltlens } from './common.mjs';
             }
         }
         // Not near ctrl point, check if in a segment
-        e = screenToRealPoint(e.x, e.y);
+        e = screenToRealPoint(view2d, e.x, e.y);
         var y = -bowlprop.thick / 2;
         for (var i = 0; i < bowlprop.rings.length; i++) {
             if (e.x > bowlprop.rings[i].xvals.min && e.x < bowlprop.rings[i].xvals.max

@@ -6,7 +6,7 @@
 import * as THREE from 'three';
 import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
 import { dfltclrs, dfltlens } from './common.mjs';
-import { screenToRealPoint } from './bowl_calculator.mjs';
+import { screenToRealPoint, realToScreen } from './bowl_calculator.mjs';
 
 (() => {
     var version = "0.2";
@@ -297,12 +297,12 @@ import { screenToRealPoint } from './bowl_calculator.mjs';
         return npoint;
     }
 
-    function realToScreen(x, y, ofst = -.5) {
-        return {
-            x: x * view2d.scale + view2d.canvas.width / 2,
-            y: -(y - ofst) * view2d.scale + view2d.canvas.height
-        };
-    }
+    // function realToScreen(x, y, ofst = -.5) {
+    //     return {
+    //         x: x * view2d.scale + view2d.canvas.width / 2,
+    //         y: -(y - ofst) * view2d.scale + view2d.canvas.height
+    //     };
+    // }
 
     function splitRingY(curve) {
         var y = 0;
@@ -362,8 +362,8 @@ import { screenToRealPoint } from './bowl_calculator.mjs';
                 ctx.lineWidth = style.segs.width;
             }
             if (y <= bowlprop.height) {
-                var p1 = realToScreen(bowlprop.rings[i].xvals.min, y);
-                var p2 = realToScreen(bowlprop.rings[i].xvals.max, y + bowlprop.rings[i].height);
+                var p1 = realToScreen(view2d, bowlprop.rings[i].xvals.min, y);
+                var p2 = realToScreen(view2d, bowlprop.rings[i].xvals.max, y + bowlprop.rings[i].height);
                 ctx.rect(p1.x, p1.y, p2.x - p1.x, p2.y - p1.y);
                 ctx.stroke();
                 if (document.getElementById("showsegnum").checked) {
@@ -407,7 +407,7 @@ import { screenToRealPoint } from './bowl_calculator.mjs';
         ctx.beginPath();
         var point;
         for (var p = 0; p < poly.length; p++) {
-            point = realToScreen(poly[p].x, poly[p].y, 0);
+            point = realToScreen(view2d, poly[p].x, poly[p].y, 0);
             if (p == 0) {
                 ctx.moveTo(point.x, point.y - ctx.canvas.height / 2);
             } else {
@@ -468,8 +468,8 @@ import { screenToRealPoint } from './bowl_calculator.mjs';
     function drawGRatio(ctx) {
         ctx.lineWidth = style.gratio.width;
         ctx.strokeStyle = style.gratio.color;
-        var topleft = realToScreen(-bowlprop.radius, bowlprop.height);
-        var botright = realToScreen(bowlprop.radius, 0);
+        var topleft = realToScreen(view2d, -bowlprop.radius, bowlprop.height);
+        var botright = realToScreen(view2d, bowlprop.radius, 0);
         var g = (botright.y - topleft.y) / 1.618;
         var g2 = (botright.x - topleft.x) / 1.618;
         ctx.beginPath();
@@ -937,7 +937,7 @@ import { screenToRealPoint } from './bowl_calculator.mjs';
         document.getElementById("zoomTxt").innerHTML = 'View: ' + (view2d.canvasinches * mult).toFixed(0).concat(unit);
 
         for (var p in oldcp) {
-            bowlprop.cpoint[p] = realToScreen(oldcp[p].x, oldcp[p].y);
+            bowlprop.cpoint[p] = realToScreen(view2d, oldcp[p].x, oldcp[p].y);
         }
         drawCanvas();
     }
@@ -968,7 +968,7 @@ import { screenToRealPoint } from './bowl_calculator.mjs';
             view3d.renderer.setSize(view2d.ctx.canvas.width, view2d.ctx.canvas.height);
             view3d.camera.updateProjectionMatrix();
             for (var p in oldcp) {
-                bowlprop.cpoint[p] = realToScreen(oldcp[p].x, oldcp[p].y);
+                bowlprop.cpoint[p] = realToScreen(view2d, oldcp[p].x, oldcp[p].y);
             }
             drawCanvas();
             build3D();

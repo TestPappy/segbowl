@@ -6,7 +6,7 @@
 import * as THREE from 'three';
 import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
 import { dfltclrs, dfltlens } from './common.mjs';
-import { screenToRealPoint, realToScreen } from './bowl_calculator.mjs';
+import { screenToRealPoint, realToScreen, screenToReal } from './bowl_calculator.mjs';
 
 (() => {
     var version = "0.2";
@@ -247,7 +247,7 @@ import { screenToRealPoint, realToScreen } from './bowl_calculator.mjs';
 
     function calcBezPath(real = true) {
         if (real) {
-            var rpoint = screenToReal();
+            var rpoint = screenToReal(view2d, bowlprop);
         } else {
             var rpoint = bowlprop.cpoint;
         }
@@ -286,23 +286,6 @@ import { screenToRealPoint, realToScreen } from './bowl_calculator.mjs';
         newcurve2.push(newcurve[newcurve.length - 1]); // Close the gap
         return { c1: newcurve, c2: newcurve2 }; // c1 is inner wall, c2 outer wall
     }
-
-    function screenToReal() {
-        var npoint = [];
-        for (var p in bowlprop.cpoint) {
-            npoint.push(new THREE.Vector2(
-                (bowlprop.cpoint[p].x - view2d.canvas.width / 2) / view2d.scale,
-                (view2d.canvas.height - bowlprop.cpoint[p].y) / view2d.scale - .5)); // .5 to put at 0,0
-        }
-        return npoint;
-    }
-
-    // function realToScreen(x, y, ofst = -.5) {
-    //     return {
-    //         x: x * view2d.scale + view2d.canvas.width / 2,
-    //         y: -(y - ofst) * view2d.scale + view2d.canvas.height
-    //     };
-    // }
 
     function splitRingY(curve) {
         var y = 0;
@@ -928,7 +911,7 @@ import { screenToRealPoint, realToScreen } from './bowl_calculator.mjs';
         }
         if (this.id == "zoomIn") { inc = -inc; }
         if (this.id == "zoomIn" && view2d.canvasinches <= 2) { return; }
-        var oldcp = screenToReal();
+        var oldcp = screenToReal(view2d, bowlprop);
 
         view2d.canvasinches += inc;
         view2d.scale = view2d.ctx.canvas.width / view2d.canvasinches;
@@ -947,7 +930,7 @@ import { screenToRealPoint, realToScreen } from './bowl_calculator.mjs';
     }
 
     function resizeWindow() {
-        var oldcp = screenToReal();
+        var oldcp = screenToReal(view2d, bowlprop);
         var cnt = 0;
         if (document.getElementById("canvas").style.display != "none") { cnt++; }
         if (document.getElementById("canvas2").style.display != "none") { cnt++; }

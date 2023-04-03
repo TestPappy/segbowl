@@ -1,3 +1,5 @@
+import * as THREE from 'three';
+
 /**
  * screenToRealPoint
  * @param {view2d} view2d 
@@ -19,4 +21,14 @@ export function realToScreen(view2d, x, y, ofst = -.5) {
         x: x * view2d.scale + view2d.canvas.width / 2,
         y: -(y - ofst) * view2d.scale + view2d.canvas.height
     };
+}
+
+export function screenToReal(view2d, bowlprop) {
+    var npoint = [];
+    for (var p in bowlprop.cpoint) {
+        npoint.push(new THREE.Vector2(
+            (bowlprop.cpoint[p].x - view2d.canvas.width / 2) / view2d.scale,
+            (view2d.canvas.height - bowlprop.cpoint[p].y) / view2d.scale - .5)); // .5 to put at 0,0
+    }
+    return npoint;
 }

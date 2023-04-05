@@ -14,6 +14,8 @@ var view2d = {
     scale: scale
 };
 
+console.log("Scale: " + scale);
+
 describe('screenToRealPoint', () => {
     it('converts click on 250, 125 to real point', () => {
         var realPoint = screenToRealPoint(view2d, width, height / 2);
@@ -56,8 +58,14 @@ describe('screenToReal', () => {
         ]
     }
     it('calculates something', () => {
-        console.log(bowlprop.cpoint);
         var npoint = screenToReal(view2d, bowlprop);
-        console.log(npoint);
+        expect(npoint[0].x).toBe(1.5);
+        expect(npoint[0].y).toBe(0);
+        expect(npoint[1].x).toBe(2);
+        expect(npoint[1].y).toBe(0);
+        expect(npoint[2].x).toBe(2);
+        expect(npoint[2].y).toBe(3);
+        expect(npoint[3].x).toBe(2.5);
+        expect(npoint[3].y).toBe(3.5);
     })
 })

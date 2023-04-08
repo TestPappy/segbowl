@@ -76,17 +76,21 @@ export function splitRingY(curve, bowlprop) {
             segcurve.push({ x: curve[0].x, y: curve[0].y }); 
         } 
         for (var p = 1; p < curve.length; p++) {
-            var m = (curve[p].y - curve[p - 1].y) / (curve[p].x - curve[p - 1].x);
-            if (curve[p - 1].y < y_from && curve[p].y > y_to) { // Make sure we don't skip over thin rings
-                segcurve.push({ x: (y_from - curve[p - 1].y) / m + curve[p - 1].x, y: y_from });
-                segcurve.push({ x: (y_to - curve[p - 1].y) / m + curve[p - 1].x, y: y_to });
-            } else if (curve[p - 1].y <= y_from && curve[p].y > y_from) { // First point inside segment y
-                segcurve.push({ x: (y_from - curve[p].y) / m + curve[p].x, y: y_from });
-            } else if (curve[p - 1].y < y_to && curve[p].y >= y_to) { // Last point in segment y
-                segcurve.push({ x: (y_to - curve[p].y) / m + curve[p].x, y: y_to });
+            var last_y = curve[p - 1].y;
+            var last_x = curve[p - 1].x;
+            var this_y = curve[p].y
+            var this_x = curve[p].x
+            var m = (this_y - last_y) / (this_x - last_x);
+            if (last_y < y_from && this_y > y_to) { // Make sure we don't skip over thin rings
+                segcurve.push({ x: (y_from - last_y) / m + last_x, y: y_from });
+                segcurve.push({ x: (y_to - last_y) / m + last_x, y: y_to });
+            } else if (last_y <= y_from && this_y > y_from) { // First point inside segment y
+                segcurve.push({ x: (y_from - this_y) / m + this_x, y: y_from });
+            } else if (last_y < y_to && this_y >= y_to) { // Last point in segment y
+                segcurve.push({ x: (y_to - this_y) / m + this_x, y: y_to });
                 break;
-            } else if (curve[p].y >= y_from && curve[p].y < y_to) {
-                segcurve.push({ x: curve[p].x, y: curve[p].y });
+            } else if (this_y >= y_from && this_y < y_to) {
+                segcurve.push({ x: this_x, y: this_y });
             } // else, p is not in segment y
         }
         if (i == bowlprop.rings.length - 1) { 
@@ -95,7 +99,7 @@ export function splitRingY(curve, bowlprop) {
         if (segcurve.length > 1) {
             curveparts.push(segcurve);
         }
-        y_from += bowlprop.rings[i].height;
+        y_from = y_to;
     }
     return curveparts;
 }

@@ -7,7 +7,7 @@ import * as THREE from 'three';
 import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
 import { dfltclrs, dfltlens } from './common.mjs';
 import { screenToRealPoint, realToScreen, screenToReal, calcBezPath, splitRingY, offsetCurve } from './bowl_calculator.mjs';
-import { loadDesign, saveDesign } from './load_save.mjs';
+import * as PERSISTENCE from './persistence.mjs';
 
 (() => {
     var version = "0.2";
@@ -119,6 +119,7 @@ import { loadDesign, saveDesign } from './load_save.mjs';
         document.getElementById("about").onclick = about;
         document.getElementById("loaddesign").onclick = load;
         document.getElementById("savedesign").onclick = save;
+        document.getElementById("cleardesign").onclick = clear;
         window.addEventListener('resize', resizeWindow);
         var btnclrclass = document.getElementsByClassName("clrbtn");
         for (var i = 0; i < btnclrclass.length; i++) {
@@ -154,7 +155,7 @@ import { loadDesign, saveDesign } from './load_save.mjs';
         /* var axisHelper = new THREE.AxisHelper(5);
         view3d.scene.add(axisHelper);  */
         build3D();
-
+        checkStorage();
     }
 
     /*======================
@@ -1092,15 +1093,32 @@ import { loadDesign, saveDesign } from './load_save.mjs';
     }
 
     function save() {
-        saveDesign(bowlprop);
+        PERSISTENCE.saveDesign(bowlprop);
+        checkStorage();
+        document.getElementById("loaddesign").disabled = false;
     }
 
     function load() {
-        if (loadDesign() !== null) {
-            bowlprop = loadDesign();
+        if (PERSISTENCE.checkStorage() !== null) {
+            bowlprop = PERSISTENCE.loadDesign();
         }
         drawCanvas();
         build3D();
+    }
+
+    function clear() {
+        PERSISTENCE.clearDesign();
+        checkStorage();
+    }
+
+    function checkStorage() {
+        if (PERSISTENCE.checkStorage() !== null) {
+            var timestamp = PERSISTENCE.checkStorage();
+            document.getElementById("storageinfo").innerHTML = "Design saved from " + timestamp;
+        } else {
+            document.getElementById("storageinfo").innerHTML = "no design in storage";
+            document.getElementById("loaddesign").disabled = true;
+        }
     }
 
 

@@ -1,4 +1,4 @@
-import { dfltclrs, dfltlens } from './common.mjs';
+import { dfltclrs, dfltlens } from '../common.mjs';
 
 test('set default colors to be 12x #E2CAA0', () => {
     const isSameColor = (element) => element == "#E2CAA0";

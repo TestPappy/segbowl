@@ -13,3 +13,8 @@ This is a client-side app, no servers are necessary. You may download the conten
 ## License
 
 Copyright 2017 Collin J. Delker. Released under the MIT License.
+
+
+## Stuff to evaluate
+
+https://stackoverflow.com/a/60280113

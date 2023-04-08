@@ -103,3 +103,25 @@ export function splitRingY(curve, bowlprop) {
     }
     return curveparts;
 }
+
+export function offsetCurve(curve, offset) {
+    // Numerical approximation by shifting line segments
+    // Returns two curves, one with + offset one with - offset
+    // And closes the gap with perp. line
+    var innerwall = [];
+    var outerwall = [];
+    for (var i = 0; i < curve.length - 1; i++) {
+        var dx = curve[i + 1].x - curve[i].x;
+        var dy = curve[i + 1].y - curve[i].y;
+        var dd = Math.sqrt(dx ** 2 + dy ** 2);
+        var kx = -dy / dd;
+        var ky = dx / dd;
+        innerwall.push(new THREE.Vector2(curve[i].x + offset * kx, curve[i].y + offset * ky));
+        outerwall.push(new THREE.Vector2(curve[i].x - offset * kx, curve[i].y - offset * ky));
+    }
+    // Get the last point
+    innerwall.push(new THREE.Vector2(curve[curve.length - 1].x + offset * kx, curve[curve.length - 1].y + offset * ky));
+    outerwall.push(new THREE.Vector2(curve[curve.length - 1].x - offset * kx, curve[curve.length - 1].y - offset * ky));
+    outerwall.push(innerwall[innerwall.length - 1]); // Close the gap
+    return { c1: innerwall, c2: outerwall }; // c1 is inner wall, c2 outer wall
+}

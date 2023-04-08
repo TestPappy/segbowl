@@ -1,5 +1,5 @@
 import { Vector2 } from "three";
-import { screenToRealPoint, realToScreen, screenToReal, splitRingY, calcBezPath } from "./bowl_calculator.mjs";
+import { screenToRealPoint, realToScreen, screenToReal, splitRingY, calcBezPath, offsetCurve } from "./bowl_calculator.mjs";
 import { dfltclrs, dfltlens } from "./common.mjs";
 var canvasinches = 8;
 var width = 500;
@@ -15,8 +15,6 @@ var view2d = {
     bottom: height - 0.5 * scale,
     scale: scale
 };
-
-console.log("Scale: " + scale);
 
 describe('screenToRealPoint', () => {
     it('converts click on 250, 125 to real point', () => {
@@ -120,7 +118,7 @@ describe('splitRingY', () => {
         new Vector2(2.203125, 1.8984375),
         new Vector2(2.5, 2.5),
         new Vector2(2.5, 2.5)
-        ]
+        ];
     it('calculates the borders of each ring on the curve', () => {
         var curveparts = splitRingY(curve, bowlprop);
         expect(Number.parseFloat(curveparts[0][4].x).toFixed(3)).toBe("1.846");
@@ -131,5 +129,33 @@ describe('splitRingY', () => {
         expect(curveparts[2][1].y).toBe(2);
         expect(curveparts[3][1].x).toBe(2.5);
         expect(curveparts[3][1].y).toBe(2.5);
+    });
+});
+
+describe('offsetCurve', () => {
+    var curve = [
+        new Vector2(0, 0),
+        new Vector2(0.1, 0),
+        new Vector2(1.5, 0),
+        new Vector2(1.796875, 0.3203125),
+        new Vector2(2, 1.0625),
+        new Vector2(2.203125, 1.8984375),
+        new Vector2(2.5, 2.5),
+        new Vector2(2.5, 2.5)
+        ];
+    it('calculates the inner and outer bowl wall', () => {
+        var result = offsetCurve(curve, 0.125);
+        expect(Number.parseFloat(result.c1[2].x).toFixed(3)).toBe("1.408");
+        expect(Number.parseFloat(result.c1[2].y).toFixed(3)).toBe("0.085");
+        expect(Number.parseFloat(result.c2[2].x).toFixed(3)).toBe("1.592");
+        expect(Number.parseFloat(result.c2[2].y).toFixed(3)).toBe("-0.085");
+        expect(Number.parseFloat(result.c1[3].x).toFixed(3)).toBe("1.676");
+        expect(Number.parseFloat(result.c1[3].y).toFixed(3)).toBe("0.353");
+        expect(Number.parseFloat(result.c2[3].x).toFixed(3)).toBe("1.917");
+        expect(Number.parseFloat(result.c2[3].y).toFixed(3)).toBe("0.287");
+        expect(Number.parseFloat(result.c1[4].x).toFixed(3)).toBe("1.879");
+        expect(Number.parseFloat(result.c1[4].y).toFixed(3)).toBe("1.092");
+        expect(Number.parseFloat(result.c2[4].x).toFixed(3)).toBe("2.121");
+        expect(Number.parseFloat(result.c2[4].y).toFixed(3)).toBe("1.033");
     });
 });

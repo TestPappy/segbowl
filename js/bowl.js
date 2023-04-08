@@ -6,7 +6,7 @@
 import * as THREE from 'three';
 import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
 import { dfltclrs, dfltlens } from './common.mjs';
-import { screenToRealPoint, realToScreen, screenToReal, calcBezPath, splitRingY } from './bowl_calculator.mjs';
+import { screenToRealPoint, realToScreen, screenToReal, calcBezPath, splitRingY, offsetCurve } from './bowl_calculator.mjs';
 
 (() => {
     var version = "0.2";
@@ -244,29 +244,6 @@ import { screenToRealPoint, realToScreen, screenToReal, calcBezPath, splitRingY 
         bowlprop.seltrapz = trapzlist;
         bowlprop.selthetas = thetas;
     }
-
-    function offsetCurve(curve, offset) {
-        // Numerical approximation by shifting line segments
-        // Returns two curves, one with + offset one with - offset
-        // And closes the gap with perp. line
-        var newcurve = [];
-        var newcurve2 = [];
-        for (var i = 0; i < curve.length - 1; i++) {
-            var dx = curve[i + 1].x - curve[i].x;
-            var dy = curve[i + 1].y - curve[i].y;
-            var dd = Math.sqrt(dx * dx + dy * dy);
-            var kx = -dy / dd;
-            var ky = dx / dd;
-            newcurve.push(new THREE.Vector2(curve[i].x + offset * kx, curve[i].y + offset * ky));
-            newcurve2.push(new THREE.Vector2(curve[i].x - offset * kx, curve[i].y - offset * ky));
-        }
-        // Get the last point
-        newcurve.push(new THREE.Vector2(curve[curve.length - 1].x + offset * kx, curve[curve.length - 1].y + offset * ky));
-        newcurve2.push(new THREE.Vector2(curve[curve.length - 1].x - offset * kx, curve[curve.length - 1].y - offset * ky));
-        newcurve2.push(newcurve[newcurve.length - 1]); // Close the gap
-        return { c1: newcurve, c2: newcurve2 }; // c1 is inner wall, c2 outer wall
-    }
-
 
     /*======================
       Drawing functions

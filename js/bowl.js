@@ -6,7 +6,7 @@
 import * as THREE from 'three';
 import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
 import { dfltclrs, dfltlens } from './common.mjs';
-import { screenToRealPoint, realToScreen, screenToReal } from './bowl_calculator.mjs';
+import { screenToRealPoint, realToScreen, screenToReal, calcBezPath, splitRingY } from './bowl_calculator.mjs';
 
 (() => {
     var version = "0.2";
@@ -157,8 +157,8 @@ import { screenToRealPoint, realToScreen, screenToReal } from './bowl_calculator
       Calculate bowl stuff
     ======================*/
     function calcRings() {
-        var ppp = calcBezPath();
-        var paths = offsetCurve(calcBezPath(), bowlprop.thick / 2);
+        var ppp = calcBezPath(view2d, bowlprop);
+        var paths = offsetCurve(calcBezPath(view2d, bowlprop), bowlprop.thick / 2);
 
         // Split path into components
         var pathx1 = [], pathx2 = [], pathy1 = [], pathy2 = [];
@@ -245,26 +245,6 @@ import { screenToRealPoint, realToScreen, screenToReal } from './bowl_calculator
         bowlprop.selthetas = thetas;
     }
 
-    function calcBezPath(real = true) {
-        if (real) {
-            var rpoint = screenToReal(view2d, bowlprop);
-        } else {
-            var rpoint = bowlprop.cpoint;
-        }
-
-        var points = [new THREE.Vector2(0, 0), new THREE.Vector2(.1, 0)];
-        for (var j = 0; j < rpoint.length - 1; j += 3) { // Step through each bezier
-            for (var t = 0; t <= 1; t += 1 / bowlprop.curvesegs) { // Each t-value
-                var mt = Math.max(0, 1 - t);
-                points.push(new THREE.Vector2(
-                    mt * mt * mt * (rpoint[j].x) + 3 * t * mt * mt * (rpoint[j + 1].x) + 3 * t * t * mt * (rpoint[j + 2].x) + t * t * t * (rpoint[j + 3].x),
-                    mt * mt * mt * (rpoint[j].y) + 3 * t * mt * mt * (rpoint[j + 1].y) + 3 * t * t * mt * (rpoint[j + 2].y) + t * t * t * (rpoint[j + 3].y)));
-            }
-        }
-        points.push(rpoint[rpoint.length - 1]); // Always end with last point (in case t != 1 exactly)
-        return points;
-    }
-
     function offsetCurve(curve, offset) {
         // Numerical approximation by shifting line segments
         // Returns two curves, one with + offset one with - offset
@@ -287,35 +267,6 @@ import { screenToRealPoint, realToScreen, screenToReal } from './bowl_calculator
         return { c1: newcurve, c2: newcurve2 }; // c1 is inner wall, c2 outer wall
     }
 
-    function splitRingY(curve) {
-        var y = 0;
-        var curveparts = [];
-        for (var i = 0; i < bowlprop.rings.length; i++) {
-            var segcurve = [];
-            if (i == 0) { segcurve.push({ x: curve[0].x, y: curve[0].y }); } // Always get first point
-            for (var p = 1; p < curve.length; p++) {
-                if (curve[p - 1].y < y && curve[p].y > y + bowlprop.rings[i].height) { // Make sure we don't skip over thin rings
-                    var m = (curve[p].y - curve[p - 1].y) / (curve[p].x - curve[p - 1].x);
-                    segcurve.push({ x: (y - curve[p - 1].y) / m + curve[p - 1].x, y: y });
-                    segcurve.push({ x: (y + bowlprop.rings[i].height - curve[p - 1].y) / m + curve[p - 1].x, y: y + bowlprop.rings[i].height });
-                } else if (curve[p - 1].y <= y && curve[p].y > y) { // First point inside segment y
-                    var m = (curve[p].y - curve[p - 1].y) / (curve[p].x - curve[p - 1].x);
-                    segcurve.push({ x: (y - curve[p].y) / m + curve[p].x, y: y });
-                } else if (curve[p - 1].y < y + bowlprop.rings[i].height && curve[p].y >= y + bowlprop.rings[i].height) { // Last point in segment y
-                    var m = (curve[p].y - curve[p - 1].y) / (curve[p].x - curve[p - 1].x);
-                    segcurve.push({ x: (y + bowlprop.rings[i].height - curve[p].y) / m + curve[p].x, y: y + bowlprop.rings[i].height });
-                } else if (curve[p].y >= y && curve[p].y < y + bowlprop.rings[i].height) {
-                    segcurve.push({ x: curve[p].x, y: curve[p].y });
-                } // else, p is not in segment y
-            }
-            if (i == bowlprop.rings.length - 1) { segcurve.push(curve[curve.length - 1]); }
-            if (segcurve.length > 1) {
-                curveparts.push(segcurve);
-            }
-            y += bowlprop.rings[i].height;
-        }
-        return curveparts;
-    }
 
     /*======================
       Drawing functions
@@ -491,7 +442,7 @@ import { screenToRealPoint, realToScreen, screenToReal } from './bowl_calculator
 
     function build3D() {
         if (document.getElementById("canvas3d").style.display == 'none') { return; } // Don't calculate if not shown
-        var curve = calcBezPath();
+        var curve = calcBezPath(view2d, bowlprop);
         calcRings();
         var offcurve = offsetCurve(curve, bowlprop.thick / 2);
         for (var m = 0; m < view3d.mesh.length; m++) {
@@ -501,7 +452,7 @@ import { screenToRealPoint, realToScreen, screenToReal } from './bowl_calculator
         }
         view3d.mesh = [];
 
-        var curvesegs = splitRingY(offcurve.c2); // Outer wall
+        var curvesegs = splitRingY(offcurve.c2, bowlprop); // Outer wall
         for (var i = 0; i < curvesegs.length; i++) {
             if (curvesegs[i].length > 1) {
                 var tottheta = bowlprop.rings[i].theta;
@@ -517,7 +468,7 @@ import { screenToRealPoint, realToScreen, screenToReal } from './bowl_calculator
                 }
             }
         }
-        curvesegs = splitRingY(offcurve.c1); // Inner wall
+        curvesegs = splitRingY(offcurve.c1, bowlprop); // Inner wall
         for (var i = 0; i < curvesegs.length; i++) {
             if (curvesegs[i].length > 1) {
                 tottheta = bowlprop.rings[i].theta;
@@ -660,7 +611,7 @@ import { screenToRealPoint, realToScreen, screenToReal } from './bowl_calculator
         }
 
         var dmin = 1000, imin;
-        var path = calcBezPath(false);
+        var path = calcBezPath(view2d, bowlprop, false);
         for (var i = 1; i < path.length; i++) {
             dx = path[i].x - e.x;
             dy = path[i].y - e.y;

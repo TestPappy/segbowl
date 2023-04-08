@@ -155,7 +155,6 @@ import { loadDesign, saveDesign } from './load_save.mjs';
         view3d.scene.add(axisHelper);  */
         build3D();
 
-        save();
     }
 
     /*======================
@@ -1097,7 +1096,9 @@ import { loadDesign, saveDesign } from './load_save.mjs';
     }
 
     function load() {
-        bowlprop = loadDesign();
+        if (loadDesign() !== null) {
+            bowlprop = loadDesign();
+        }
         drawCanvas();
         build3D();
     }

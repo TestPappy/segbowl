@@ -1,11 +1,10 @@
-var tempStore;
 
 export function loadDesign() {
     console.log("Loading...");
-    return JSON.parse(tempStore);
+    return JSON.parse(localStorage.getItem("bowlDesign"));
 }
 
 export function saveDesign(bowlprop) {
     console.log("Saving...");
-    tempStore = JSON.stringify(bowlprop);
+    localStorage.setItem("bowlDesign", JSON.stringify(bowlprop));
 }

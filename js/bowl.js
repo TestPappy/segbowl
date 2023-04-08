@@ -7,6 +7,7 @@ import * as THREE from 'three';
 import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
 import { dfltclrs, dfltlens } from './common.mjs';
 import { screenToRealPoint, realToScreen, screenToReal, calcBezPath, splitRingY, offsetCurve } from './bowl_calculator.mjs';
+import { loadDesign, saveDesign } from './load_save.mjs';
 
 (() => {
     var version = "0.2";
@@ -116,6 +117,8 @@ import { screenToRealPoint, realToScreen, screenToReal, calcBezPath, splitRingY,
         document.getElementById("mm").onclick = unitChange;
         document.getElementById("gentable").onclick = genReport;
         document.getElementById("about").onclick = about;
+        document.getElementById("loaddesign").onclick = load;
+        document.getElementById("savedesign").onclick = save;
         window.addEventListener('resize', resizeWindow);
         var btnclrclass = document.getElementsByClassName("clrbtn");
         for (var i = 0; i < btnclrclass.length; i++) {
@@ -151,6 +154,8 @@ import { screenToRealPoint, realToScreen, screenToReal, calcBezPath, splitRingY,
         /* var axisHelper = new THREE.AxisHelper(5);
         view3d.scene.add(axisHelper);  */
         build3D();
+
+        save();
     }
 
     /*======================
@@ -1085,6 +1090,16 @@ import { screenToRealPoint, realToScreen, screenToReal, calcBezPath, splitRingY,
         document.getElementsByClassName("close")[1].onclick = function () {
             document.getElementById("aboutwindow").style.display = "none";
         };
+    }
+
+    function save() {
+        saveDesign(bowlprop);
+    }
+
+    function load() {
+        bowlprop = loadDesign();
+        drawCanvas();
+        build3D();
     }
 
 

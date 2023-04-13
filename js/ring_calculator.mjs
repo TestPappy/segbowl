@@ -92,7 +92,6 @@ export function calcRingTrapz(bowlprop, ringidx, rotate = true) {
         rotation += theta * 2;
         trapzlist.push(trapz);
     }
-    console.log(trapzlist);
     bowlprop.seltrapz = trapzlist;
     bowlprop.selthetas = thetas;
 }

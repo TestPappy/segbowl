@@ -1,0 +1,43 @@
+<html>
+    <head>
+        <title>Bowl Report</title>
+        <link rel="stylesheet" href="style.css">
+    </head>
+    <body>
+        <div>
+            <button onclick="window.print();">Print</button>
+            <button onclick="window.close();">Close</button>
+        </div>
+        <p>
+            <!-- <h3>Ring List</h3> -->
+        </p>
+        <table id='cutlist'>
+            <thead>
+                <tr>
+                    <th>Ring</th>
+                    <th>Diameter</th>
+                    <th>Thickness</th>
+                    <th>Rotation</th>
+                    <th>Segments</th>
+                    <th>Cut Angle</th>
+                    <th>Outside<br>Length</th>
+                    <th>Inside<br>Length</th>
+                    <th>Strip<br>Width</th>
+                    <th>Total<br>Strip Length<sup>*</sup></th>
+                </tr>
+            </thead>
+            <tbody>
+            </tbody>
+        </table>
+        <sup>*</sup> Excluding saw kerf
+        <h2>Bowl Profile</h3>
+        <p>
+            <div id="bowl_profile"></div>
+            <div id="bowl_3d_picture"></div>
+        </p>
+        <h2>Rings</h3>
+        <p>
+            <div id="ring_2d_pictures"></div>
+        </p>
+    </body>
+</html>

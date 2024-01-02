@@ -42,6 +42,7 @@ input[type=number] {
     border: 1px solid #CCCCCC;
     border-radius: 4px;
 }
+
 select {
     width: 80%;
     padding: 16px 20px;
@@ -224,4 +225,12 @@ input[type="radio"] + label span {
 
 input[type="radio"]:checked + label span {
     background:url(check_radio_sheet.png) -57px top no-repeat;
+}
+
+input[type="text"] { 
+    width: 50px;
+    background-color: #444444;
+    color: #CCCCCC;
+    border: 1px solid #CCCCCC;
+    border-radius: 4px;
 }

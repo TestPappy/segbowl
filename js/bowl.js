@@ -1,6 +1,6 @@
 /* Segmented Bowl Designer
   (c) 2017, Collin J. Delker
-  (c) 2023, Patrick Prill
+  (c) 2024, Patrick Prill
   Released under the MIT License
 */
 import * as THREE from 'three';
@@ -8,6 +8,8 @@ import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
 import { dfltclrs, dfltlens } from './common.mjs';
 import { screenToRealPoint, realToScreen, screenToReal, calcBezPath, splitRingY, offsetCurve } from './bowl_calculator.mjs';
 import { calcRings, calcRingTrapz } from './ring_calculator.mjs';
+import { createReport } from './report.mjs';
+import { clearCanvas, drawCurve, drawRing, drawSegProfile } from './drawing.js';
 import * as PERSISTENCE from './persistence.mjs';
 
 (() => {
@@ -35,6 +37,7 @@ import * as PERSISTENCE from './persistence.mjs';
         copyring: null,
         step: 1 / 16,
         inch: true, // Inches or mm
+        sawkerf: .125,
     };
 
     var view2d = {
@@ -121,6 +124,7 @@ import * as PERSISTENCE from './persistence.mjs';
         document.getElementById("loaddesign").onclick = load;
         document.getElementById("savedesign").onclick = save;
         document.getElementById("cleardesign").onclick = clear;
+        document.getElementById("sawkerf").onchange = saveSawKerf;
         window.addEventListener('resize', resizeWindow);
         var btnclrclass = document.getElementsByClassName("clrbtn");
         for (var i = 0; i < btnclrclass.length; i++) {
@@ -162,46 +166,6 @@ import * as PERSISTENCE from './persistence.mjs';
     /*======================
       Drawing functions
     ======================*/
-    function clearCanvas(canvas, ctx) {
-        var grd = ctx.createLinearGradient(0, view2d.canvas.height, 0, 0);
-        grd.addColorStop(0, "lightblue");
-        grd.addColorStop(1, "lightgray");
-        ctx.fillStyle = grd;
-        ctx.fillRect(0, 0, canvas.width, canvas.height);
-    }
-
-    function drawSegProfile(ctx) {
-        calcRings(view2d, bowlprop);
-        var y = -bowlprop.thick / 2;
-        for (var i = 0; i < bowlprop.rings.length; i++) {
-            ctx.beginPath();
-            if (i == ctrl.copyring) {
-                ctx.strokeStyle = style.copyring.color;
-                ctx.lineWidth = style.copyring.width;
-            }
-            else if (i == ctrl.selring) {
-                ctx.strokeStyle = style.selring.color;
-                ctx.lineWidth = style.selring.width;
-            } else {
-                ctx.strokeStyle = style.segs.color;
-                ctx.lineWidth = style.segs.width;
-            }
-            if (y <= bowlprop.height) {
-                var p1 = realToScreen(view2d, bowlprop.rings[i].xvals.min, y);
-                var p2 = realToScreen(view2d, bowlprop.rings[i].xvals.max, y + bowlprop.rings[i].height);
-                ctx.rect(p1.x, p1.y, p2.x - p1.x, p2.y - p1.y);
-                ctx.stroke();
-                if (document.getElementById("showsegnum").checked) {
-                    ctx.fillStyle = "black";
-                    ctx.font = "15px Arial";
-                    ctx.textAlign = "center";
-                    ctx.fillText(i.toString(), p2.x + 10, (p1.y + p2.y) / 2 + 3);
-                    ctx.stroke();
-                }
-            }
-            y += bowlprop.rings[i].height;
-        }
-    }
 
     function drawControlLines(ctx) {
         ctx.lineWidth = style.cpline.width;
@@ -228,68 +192,6 @@ import * as PERSISTENCE from './persistence.mjs';
         }
     }
 
-    function drawPoly(ctx, poly, fill = true) {
-        ctx.beginPath();
-        var point;
-        for (var p = 0; p < poly.length; p++) {
-            point = realToScreen(view2d, poly[p].x, poly[p].y, 0);
-            if (p == 0) {
-                ctx.moveTo(point.x, point.y - ctx.canvas.height / 2);
-            } else {
-                ctx.lineTo(point.x, point.y - ctx.canvas.height / 2);
-            }
-        }
-        ctx.closePath();
-        if (fill) { ctx.fill(); }
-        ctx.stroke();
-    }
-
-    function drawRing(ctx, selring) {
-        calcRingTrapz(bowlprop, selring, true);
-        for (var i = 0; i < bowlprop.rings[selring].segs; i++) {
-            ctx.strokeStyle = "#000";
-            ctx.lineWidth = 2;
-            ctx.fillStyle = bowlprop.rings[selring].clrs[i];
-            drawPoly(ctx, bowlprop.seltrapz[i], true);
-        }
-        for (var i = 0; i < ctrl.selseg.length; i++) {
-            ctx.strokeStyle = style.selseg.color;
-            ctx.lineWidth = style.selseg.width;
-            drawPoly(ctx, bowlprop.seltrapz[ctrl.selseg[i]], false);
-        }
-        ctx.lineWidth = 1;
-        ctx.strokeStyle = "#000";
-        ctx.beginPath();
-        ctx.arc(ctx.canvas.width / 2, ctx.canvas.height / 2, (bowlprop.rings[selring].xvals.min + bowlprop.pad) * view2d.scale, 0, Math.PI * 2);
-        ctx.arc(ctx.canvas.width / 2, ctx.canvas.height / 2, (bowlprop.rings[selring].xvals.max - bowlprop.pad) * view2d.scale, 0, Math.PI * 2);
-        ctx.stroke();
-    }
-
-    function drawCurve(ctx) {
-        ctx.lineWidth = bowlprop.thick * view2d.scale;
-        ctx.strokeStyle = style.curve.color;
-        ctx.beginPath();
-        ctx.moveTo(view2d.centerx, view2d.bottom);
-        ctx.lineTo(bowlprop.cpoint[0].x, bowlprop.cpoint[0].y);
-        for (var i = 0; i < bowlprop.cpoint.length - 1; i += 3) {
-            ctx.bezierCurveTo(
-                bowlprop.cpoint[i + 1].x, bowlprop.cpoint[i + 1].y,
-                bowlprop.cpoint[i + 2].x, bowlprop.cpoint[i + 2].y,
-                bowlprop.cpoint[i + 3].x, bowlprop.cpoint[i + 3].y);
-        }
-
-        // Left-side mirror curve
-        ctx.moveTo(view2d.centerx, view2d.bottom);
-        ctx.lineTo(view2d.canvas.width - bowlprop.cpoint[0].x, bowlprop.cpoint[0].y);
-        for (var i = 0; i < bowlprop.cpoint.length - 1; i += 3) {
-            ctx.bezierCurveTo(
-                canvas.width - bowlprop.cpoint[i + 1].x, bowlprop.cpoint[i + 1].y,
-                canvas.width - bowlprop.cpoint[i + 2].x, bowlprop.cpoint[i + 2].y,
-                canvas.width - bowlprop.cpoint[i + 3].x, bowlprop.cpoint[i + 3].y);
-        }
-        ctx.stroke();
-    }
-
     function drawGRatio(ctx) {
         ctx.lineWidth = style.gratio.width;
         ctx.strokeStyle = style.gratio.color;
@@ -314,19 +216,19 @@ import * as PERSISTENCE from './persistence.mjs';
     }
 
     function drawCanvas() {
-        clearCanvas(view2d.canvas, view2d.ctx);
-        clearCanvas(view2d.canvas2, view2d.ctx2);
+        clearCanvas(view2d.canvas, view2d.ctx, view2d.canvas.height);
+        clearCanvas(view2d.canvas2, view2d.ctx2, view2d.canvas.height);
         if (document.getElementById("showsegs").checked) {
-            drawSegProfile(view2d.ctx);
+            drawSegProfile(view2d.ctx, bowlprop, view2d, ctrl, style);
         }
         if (document.getElementById("showratio").checked) {
             drawGRatio(view2d.ctx);
         }
         drawControlLines(view2d.ctx);
-        drawCurve(view2d.ctx);
+        drawCurve(view2d.ctx, bowlprop, view2d, style);
         drawControlPoints(view2d.ctx);
         if (document.getElementById("canvas2").style.display != "none" && ctrl.selring != null) {
-            drawRing(view2d.ctx2, ctrl.selring);
+            drawRing(view2d.ctx2, ctrl.selring, bowlprop, view2d, ctrl, style);
         }
         updateRingInfo();
     }
@@ -739,6 +641,24 @@ import * as PERSISTENCE from './persistence.mjs';
         padChange();
         setRingHtxt();
         drawCanvas();
+        loadSawKerf();
+    }
+
+    function loadSawKerf() {
+        if (ctrl.inch) {
+            document.getElementById("sawkerf").value = ctrl.sawkerf;
+        } else {
+            document.getElementById("sawkerf").value = (ctrl.sawkerf * 25.4).toFixed(3);
+        }
+    }
+
+    function saveSawKerf() {
+        if (ctrl.inch) {
+            ctrl.sawkerf = document.getElementById("sawkerf").value;
+        } else {
+            ctrl.sawkerf = (document.getElementById("sawkerf").value / 25.4).toFixed(3);
+        }
+        loadSawKerf();
     }
 
     function zoom() {
@@ -839,6 +759,7 @@ import * as PERSISTENCE from './persistence.mjs';
                     "&nbsp;Inside Length:", reduce(seglist[seg].inlen, step), "<br>",
                     "&nbsp;Width:", reduce(seglist[seg].width, step), "<br>",
                     "&nbsp;Strip Length:", reduce(seglist[seg].length, step), "<br>",
+                    "&nbsp;Total Strip Length:", reduce(seglist[seg].length + (ctrl.sawkerf * seglist[seg].cnt), step), "<br>",
                     '<hr align="left" width="20%">'
                 ]);
             }
@@ -850,66 +771,8 @@ import * as PERSISTENCE from './persistence.mjs';
 
     function genReport() {
         var step = 1 / parseInt(document.getElementById("rptfmt").value);
-        var nwindow = window.open('', 'Report', 'height=800,width=1000');
-        nwindow.document.write('<html><head><title>Bowl Report</title>');
-        nwindow.document.write('<link rel="stylesheet" href="style.css">');
-        nwindow.document.write('</head>');
-        nwindow.document.write('<button onclick="window.print();">Print</button>');
-        nwindow.document.write('<button onclick="window.close();">Close</button>');
-        nwindow.document.write('<h3>Ring list</h3>');
-        nwindow.document.write('<table><tr><th>Ring</th><th>Diameter</th><th>Thickness</th><th>Rotation</th><th>Segments</th><th>Cut Angle</th><th>Outside<br>Length</th><th>Inside<br>Length</th><th>Strip<br>Width</th><th>Total<br>Strip Length<sup>*</sup></th></tr>');
-        var txt = ['<tr><th>Base</th><td>', reduce(bowlprop.rings[0].xvals.max * 2, step), '</td><td>', reduce(bowlprop.rings[0].height, step), '</td><td>-</td>',
-            '<td>-</td>', '<td>-</td>', '<td>-</td>', '<td>-</td>', '<td>-</td>', '<td>-</td>', '</tr>'];
-        nwindow.document.write(txt.join(''));
-
-        for (var i = 1; i < bowlprop.usedrings; i++) {
-            var seglist = getReportSegsList(i);
-            var txt = ['<tr><th rowspan="' + seglist.length + '">', i, '</th>',
-                '<td>', reduce(bowlprop.rings[i].xvals.max * 2, step), '</td>',
-                '<td>', reduce(bowlprop.rings[i].height, step), '</td>',
-                '<td>', (180 / Math.PI * bowlprop.rings[i].theta).toFixed(2).concat("&deg;"), '</td>'
-            ];
-            for (var seg = 0; seg < seglist.length; seg++) {
-
-                if (seg > 0) { txt = txt.concat(['<tr><td></td><td></td><td></td>']); }
-                txt = txt.concat([
-                    '<td>', seglist[seg].cnt, '</td>',
-                    '<td>', seglist[seg].theta.toFixed(2).concat("&deg;"), '</td>',
-                    '<td>', reduce(seglist[seg].outlen, step), '</td>',
-                    '<td>', reduce(seglist[seg].inlen, step), '</td>',
-                    '<td>', reduce(seglist[seg].width, step), '</td>',
-                    '<td>', reduce(seglist[seg].length, step), '</td>',
-                    '</tr>'
-                ]);
-            }
-            console.log(txt.join(''));
-            nwindow.document.write(txt.join(''));
-        }
-        nwindow.document.write('</table>');
-        nwindow.document.write('<sup>*</sup> Excluding saw kerf');
-        nwindow.document.write('<h3>Bowl Profile</h3>');
-
-        ctrl.selring = null,
-            ctrl.selseg = [];
-        var bcanvas = document.getElementById("backcanvas");
-        var ctx = bcanvas.getContext("2d");
-        ctx.canvas.width = view2d.canvas.width;
-        ctx.canvas.height = view2d.canvas.height;
-        clearCanvas(bcanvas, ctx);
-        drawCurve(ctx);
-        drawSegProfile(ctx);
-        nwindow.document.write('<p><img src="' + bcanvas.toDataURL("image/png") + '"/>');
-        view3d.renderer.render(view3d.scene, view3d.camera);
-        nwindow.document.write('<img src="' + view3d.renderer.domElement.toDataURL("image/png") + '"/>');
-
-        for (var i = 0; i < bowlprop.usedrings; i++) {
-            clearCanvas(bcanvas, ctx);
-            drawRing(ctx, i);
-            nwindow.document.write('<h3>Ring ' + i + '</h3>');
-            nwindow.document.write('<p><img src="' + bcanvas.toDataURL("image/png") + '"/>');
-        }
-        nwindow.document.write('</body></html>');
-        nwindow.document.close();
+        var nwindow = window.open('report.html', 'Report', 'height=800,width=1000');
+        createReport(nwindow, bowlprop, step, ctrl, view2d, view3d, style);
     }
 
     function showPalette() {

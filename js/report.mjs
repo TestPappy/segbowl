@@ -12,7 +12,7 @@ export function createReport(nwindow, bowlprop, step, ctrl, view2d, view3d, styl
 
         // Add pictures
         ctrl.selring = null,
-            ctrl.selseg = [];
+        ctrl.selseg = [];
         var bcanvas = document.getElementById("backcanvas");
         var ctx = bcanvas.getContext("2d");
         ctx.canvas.width = view2d.canvas.width;
@@ -22,11 +22,11 @@ export function createReport(nwindow, bowlprop, step, ctrl, view2d, view3d, styl
         drawSegProfile(ctx, bowlprop, view2d, ctrl, style);
         
         var bowl_profile = nwindow.document.getElementById('bowl_profile');
-        bowl_profile.innerHTML = '<img src="' + bcanvas.toDataURL("image/png") + '"/>'
+        bowl_profile.innerHTML = '<img src="' + bcanvas.toDataURL("image/png") + '" width="60%"/>'
         
         var bowl_3d_picture = nwindow.document.getElementById('bowl_3d_picture');
         view3d.renderer.render(view3d.scene, view3d.camera);
-        bowl_3d_picture.innerHTML = '<img src="' + view3d.renderer.domElement.toDataURL("image/png") + '"/>';
+        bowl_3d_picture.innerHTML = '<img src="' + view3d.renderer.domElement.toDataURL("image/png") + '" width="60%"/>';
 
         var ring_2d_pictures = nwindow.document.getElementById('ring_2d_pictures');
         for (var i = 0; i < bowlprop.usedrings; i++) {
@@ -38,13 +38,23 @@ export function createReport(nwindow, bowlprop, step, ctrl, view2d, view3d, styl
                 ring_2d_pictures.innerHTML += ('<h3>Base</h3> \n');
             }
             ring_2d_pictures.innerHTML += ('<p><img src="' + bcanvas.toDataURL("image/png") + '"/>\n');
+            add_cut_list_table_with_header(nwindow, 'ring_2d_pictures', table, i, bowlprop, step, ctrl);
         }
     }, 500);
- 
 
+}
 
-
-        // nwindow.document.close();
+function add_cut_list_table_with_header(nwindow, name, table, no, bowlprop, step, ctrl) {
+    var html_element = nwindow.document.getElementById(name);
+    html_element.innerHTML += ('<table id="cutlist_ring' + no + '"></table');
+    var table_per_ring = nwindow.document.getElementById('cutlist_ring' + no);
+    var table_per_ring_header = table_per_ring.createTHead().insertRow();
+    for (var c = 0; c < table.rows[0].cells.length; c++) {
+        var cell = table_per_ring_header.insertCell(c); 
+        cell.innerHTML = ('<b>' + table.rows[0].cells[c].innerText + '</b>\n');
+    }
+    var table_per_ring_body = table_per_ring.createTBody()
+    add_cutlist_row(table_per_ring_body, bowlprop, no, step, ctrl);
 }
 
 function add_cutlist_row(table, bowlprop, no, step, ctrl) {
@@ -89,6 +99,8 @@ function add_cutlist_row(table, bowlprop, no, step, ctrl) {
     var cell_strip_length = row.insertCell(9);
     cell_strip_length.innerHTML = reduce(seglist[0].length, step, ctrl);
 
+    var cell_strip_length_total = row.insertCell(10);
+    cell_strip_length_total.innerHTML = reduce(seglist[0].length + 1/8, step, ctrl)
 }
 
 export function reduce(value, step = null, ctrl) {

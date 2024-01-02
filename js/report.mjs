@@ -10,6 +10,10 @@ export function createReport(nwindow, bowlprop, step, ctrl, view2d, view3d, styl
             add_cutlist_row(table, bowlprop, i, step, ctrl);
         }
 
+        // Show segment numbers
+        var segnum_preset = window.document.getElementById("showsegnum").checked;
+        window.document.getElementById("showsegnum").checked = true;
+
         // Add pictures
         ctrl.selring = null,
         ctrl.selseg = [];
@@ -22,7 +26,7 @@ export function createReport(nwindow, bowlprop, step, ctrl, view2d, view3d, styl
         drawSegProfile(ctx, bowlprop, view2d, ctrl, style);
         
         var bowl_profile = nwindow.document.getElementById('bowl_profile');
-        bowl_profile.innerHTML = '<img src="' + bcanvas.toDataURL("image/png") + '" width="60%"/>'
+        bowl_profile.innerHTML = '<img src="' + bcanvas.toDataURL("image/png") + '" width="60%"/>';
         
         var bowl_3d_picture = nwindow.document.getElementById('bowl_3d_picture');
         view3d.renderer.render(view3d.scene, view3d.camera);
@@ -40,6 +44,9 @@ export function createReport(nwindow, bowlprop, step, ctrl, view2d, view3d, styl
             ring_2d_pictures.innerHTML += ('<p><img src="' + bcanvas.toDataURL("image/png") + '"/>\n');
             add_cut_list_table_with_header(nwindow, 'ring_2d_pictures', table, i, bowlprop, step, ctrl);
         }
+
+        // Reset segment number option
+        window.document.getElementById("showsegnum").checked = segnum_preset;
     }, 500);
 
 }

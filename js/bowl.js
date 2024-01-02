@@ -1,6 +1,6 @@
 /* Segmented Bowl Designer
   (c) 2017, Collin J. Delker
-  (c) 2023, Patrick Prill
+  (c) 2024, Patrick Prill
   Released under the MIT License
 */
 import * as THREE from 'three';
@@ -164,46 +164,6 @@ import * as PERSISTENCE from './persistence.mjs';
     /*======================
       Drawing functions
     ======================*/
-    // function clearCanvas(canvas, ctx) {
-    //     var grd = ctx.createLinearGradient(0, view2d.canvas.height, 0, 0);
-    //     grd.addColorStop(0, "lightblue");
-    //     grd.addColorStop(1, "lightgray");
-    //     ctx.fillStyle = grd;
-    //     ctx.fillRect(0, 0, canvas.width, canvas.height);
-    // }
-
-    // function drawSegProfile(ctx) {
-    //     calcRings(view2d, bowlprop);
-    //     var y = -bowlprop.thick / 2;
-    //     for (var i = 0; i < bowlprop.rings.length; i++) {
-    //         ctx.beginPath();
-    //         if (i == ctrl.copyring) {
-    //             ctx.strokeStyle = style.copyring.color;
-    //             ctx.lineWidth = style.copyring.width;
-    //         }
-    //         else if (i == ctrl.selring) {
-    //             ctx.strokeStyle = style.selring.color;
-    //             ctx.lineWidth = style.selring.width;
-    //         } else {
-    //             ctx.strokeStyle = style.segs.color;
-    //             ctx.lineWidth = style.segs.width;
-    //         }
-    //         if (y <= bowlprop.height) {
-    //             var p1 = realToScreen(view2d, bowlprop.rings[i].xvals.min, y);
-    //             var p2 = realToScreen(view2d, bowlprop.rings[i].xvals.max, y + bowlprop.rings[i].height);
-    //             ctx.rect(p1.x, p1.y, p2.x - p1.x, p2.y - p1.y);
-    //             ctx.stroke();
-    //             if (document.getElementById("showsegnum").checked) {
-    //                 ctx.fillStyle = "black";
-    //                 ctx.font = "15px Arial";
-    //                 ctx.textAlign = "center";
-    //                 ctx.fillText(i.toString(), p2.x + 10, (p1.y + p2.y) / 2 + 3);
-    //                 ctx.stroke();
-    //             }
-    //         }
-    //         y += bowlprop.rings[i].height;
-    //     }
-    // }
 
     function drawControlLines(ctx) {
         ctx.lineWidth = style.cpline.width;
@@ -229,43 +189,6 @@ import * as PERSISTENCE from './persistence.mjs';
             ctx.stroke();
         }
     }
-
-    // function drawPoly(ctx, poly, fill = true) {
-    //     ctx.beginPath();
-    //     var point;
-    //     for (var p = 0; p < poly.length; p++) {
-    //         point = realToScreen(view2d, poly[p].x, poly[p].y, 0);
-    //         if (p == 0) {
-    //             ctx.moveTo(point.x, point.y - ctx.canvas.height / 2);
-    //         } else {
-    //             ctx.lineTo(point.x, point.y - ctx.canvas.height / 2);
-    //         }
-    //     }
-    //     ctx.closePath();
-    //     if (fill) { ctx.fill(); }
-    //     ctx.stroke();
-    // }
-
-    // function drawRing(ctx, selring) {
-    //     calcRingTrapz(bowlprop, selring, true);
-    //     for (var i = 0; i < bowlprop.rings[selring].segs; i++) {
-    //         ctx.strokeStyle = "#000";
-    //         ctx.lineWidth = 2;
-    //         ctx.fillStyle = bowlprop.rings[selring].clrs[i];
-    //         drawPoly(ctx, bowlprop.seltrapz[i], true);
-    //     }
-    //     for (var i = 0; i < ctrl.selseg.length; i++) {
-    //         ctx.strokeStyle = style.selseg.color;
-    //         ctx.lineWidth = style.selseg.width;
-    //         drawPoly(ctx, bowlprop.seltrapz[ctrl.selseg[i]], false);
-    //     }
-    //     ctx.lineWidth = 1;
-    //     ctx.strokeStyle = "#000";
-    //     ctx.beginPath();
-    //     ctx.arc(ctx.canvas.width / 2, ctx.canvas.height / 2, (bowlprop.rings[selring].xvals.min + bowlprop.pad) * view2d.scale, 0, Math.PI * 2);
-    //     ctx.arc(ctx.canvas.width / 2, ctx.canvas.height / 2, (bowlprop.rings[selring].xvals.max - bowlprop.pad) * view2d.scale, 0, Math.PI * 2);
-    //     ctx.stroke();
-    // }
 
     function drawGRatio(ctx) {
         ctx.lineWidth = style.gratio.width;

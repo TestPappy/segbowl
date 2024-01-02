@@ -107,7 +107,7 @@ function add_cutlist_row(table, bowlprop, no, step, ctrl) {
     cell_strip_length.innerHTML = reduce(seglist[0].length, step, ctrl);
 
     var cell_strip_length_total = row.insertCell(10);
-    cell_strip_length_total.innerHTML = reduce(seglist[0].length + 1/8, step, ctrl)
+    cell_strip_length_total.innerHTML = reduce(seglist[0].length + (ctrl.sawkerf * seglist[0].cnt), step, ctrl)
 }
 
 export function reduce(value, step = null, ctrl) {

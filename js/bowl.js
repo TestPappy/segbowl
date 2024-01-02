@@ -37,6 +37,7 @@ import * as PERSISTENCE from './persistence.mjs';
         copyring: null,
         step: 1 / 16,
         inch: true, // Inches or mm
+        sawkerf: .125,
     };
 
     var view2d = {
@@ -123,6 +124,7 @@ import * as PERSISTENCE from './persistence.mjs';
         document.getElementById("loaddesign").onclick = load;
         document.getElementById("savedesign").onclick = save;
         document.getElementById("cleardesign").onclick = clear;
+        document.getElementById("sawkerf").onchange = saveSawKerf;
         window.addEventListener('resize', resizeWindow);
         var btnclrclass = document.getElementsByClassName("clrbtn");
         for (var i = 0; i < btnclrclass.length; i++) {
@@ -639,6 +641,24 @@ import * as PERSISTENCE from './persistence.mjs';
         padChange();
         setRingHtxt();
         drawCanvas();
+        loadSawKerf();
+    }
+
+    function loadSawKerf() {
+        if (ctrl.inch) {
+            document.getElementById("sawkerf").value = ctrl.sawkerf;
+        } else {
+            document.getElementById("sawkerf").value = (ctrl.sawkerf * 25.4).toFixed(3);
+        }
+    }
+
+    function saveSawKerf() {
+        if (ctrl.inch) {
+            ctrl.sawkerf = document.getElementById("sawkerf").value;
+        } else {
+            ctrl.sawkerf = (document.getElementById("sawkerf").value / 25.4).toFixed(3);
+        }
+        loadSawKerf();
     }
 
     function zoom() {
@@ -739,6 +759,7 @@ import * as PERSISTENCE from './persistence.mjs';
                     "&nbsp;Inside Length:", reduce(seglist[seg].inlen, step), "<br>",
                     "&nbsp;Width:", reduce(seglist[seg].width, step), "<br>",
                     "&nbsp;Strip Length:", reduce(seglist[seg].length, step), "<br>",
+                    "&nbsp;Total Strip Length:", reduce(seglist[seg].length + (ctrl.sawkerf * seglist[seg].cnt), step), "<br>",
                     '<hr align="left" width="20%">'
                 ]);
             }

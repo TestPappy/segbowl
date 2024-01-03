@@ -10,7 +10,6 @@ export function createReport(nwindow, bowlprop, step, ctrl, view2d, view3d, styl
             add_cutlist_row(table, bowlprop, i, step, ctrl);
         }
 
-        console.log(bowlprop);
         // Show segment numbers
         var segnum_preset = window.document.getElementById("showsegnum").checked;
         window.document.getElementById("showsegnum").checked = true;
@@ -93,7 +92,7 @@ function add_cutlist_row(table, bowlprop, no, step, ctrl) {
             row.insertCell(3);
         }
         var cell_color = row.insertCell(4);
-        cell_color.innerHTML = seglist[s].color;
+        cell_color.innerHTML = seglist[s].wood;
 
         var cell_segments = row.insertCell(5);
         cell_segments.innerHTML = seglist[s].cnt;
@@ -176,6 +175,7 @@ export function getReportSegsList(bowlprop, ring) {
                 width: bowlprop.seltrapz[seg][1].x - bowlprop.seltrapz[seg][0].x,
                 length: 2 * bowlprop.seltrapz[seg][1].y,
                 color: bowlprop.rings[ring].clrs[seg],
+                wood: bowlprop.rings[ring].wood[seg],
                 cnt: 1
             });
             col_size_segs.push(col + "-" + seglen);
@@ -183,9 +183,6 @@ export function getReportSegsList(bowlprop, ring) {
             seginfo_new[idx2].length += seginfo_new[idx2].outlen;
             seginfo_new[idx2].cnt++;
         }
-    }
-    if (ring == 1) {
-        console.log(seginfo_new);
     }
     return seginfo_new;
 }

@@ -1,5 +1,5 @@
 import { offsetCurve, calcBezPath } from "./bowl_calculator.mjs";
-import { dfltclrs, dfltlens } from "./common.mjs";
+import { dfltclrs, dfltwood, dfltlens } from "./common.mjs";
 
 /**
  * calcRings
@@ -25,7 +25,7 @@ export function calcRings(view2d, bowlprop) {
         var x = []; // x-values within this ring
         var yidx = []; // INDEX of y-values in this ring
         if (bowlprop.rings.length <= i) { // Need a new ring
-            bowlprop.rings.push({ height: .75, segs: 12, clrs: dfltclrs(), seglen: dfltlens(), xvals: [], theta: 0 });
+            bowlprop.rings.push({ height: .75, segs: 12, clrs: dfltclrs(), wood: dfltwood(), seglen: dfltlens(), xvals: [], theta: 0 });
         }
         for (var p = 0; p < pathx1.length; p++) {
             if (pathy1[p] > y && pathy1[p] < y + bowlprop.rings[i].height) { 

@@ -92,25 +92,28 @@ function add_cutlist_row(table, bowlprop, no, step, ctrl) {
             row.insertCell(2);
             row.insertCell(3);
         }
-        var cell_segments = row.insertCell(4);
+        var cell_color = row.insertCell(4);
+        cell_color.innerHTML = seglist[s].color;
+
+        var cell_segments = row.insertCell(5);
         cell_segments.innerHTML = seglist[s].cnt;
 
-        var cell_cut_angle = row.insertCell(5);
+        var cell_cut_angle = row.insertCell(6);
         cell_cut_angle.innerHTML = seglist[s].theta.toFixed(2).concat("&deg;");
 
-        var cell_outside_length = row.insertCell(6);
+        var cell_outside_length = row.insertCell(7);
         cell_outside_length.innerHTML = reduce(seglist[s].outlen, step, ctrl);
 
-        var cell_inside_length = row.insertCell(7);
+        var cell_inside_length = row.insertCell(8);
         cell_inside_length.innerHTML = reduce(seglist[s].inlen, step, ctrl);
 
-        var cell_strip_width = row.insertCell(8);
+        var cell_strip_width = row.insertCell(9);
         cell_strip_width.innerHTML = reduce(seglist[s].width, step, ctrl);
 
-        var cell_strip_length = row.insertCell(9);
+        var cell_strip_length = row.insertCell(10);
         cell_strip_length.innerHTML = reduce(seglist[s].length, step, ctrl);
 
-        var cell_strip_length_total = row.insertCell(10);
+        var cell_strip_length_total = row.insertCell(11);
         cell_strip_length_total.innerHTML = reduce(seglist[s].length + (ctrl.sawkerf * seglist[s].cnt), step, ctrl)
     }
 }
@@ -142,10 +145,15 @@ export function reduce(value, step = null, ctrl) {
 
 export function getReportSegsList(bowlprop, ring) {
     var donesegs = [];
+    var col_size_segs = [];
     var seginfo = [];
+    var seginfo_new = [];
     calcRingTrapz(bowlprop, ring, false);
     for (var seg = 0; seg < bowlprop.rings[ring].segs; seg++) {
+        var col = bowlprop.rings[ring].clrs[seg];
+        var seglen = bowlprop.rings[ring].seglen[seg];
         var idx = donesegs.indexOf(bowlprop.rings[ring].seglen[seg]);
+        var idx2 = col_size_segs.indexOf(col + "-" + seglen);
         if (idx == -1) {
             seginfo.push({
                 theta: 180 / bowlprop.rings[ring].segs * bowlprop.rings[ring].seglen[seg],
@@ -160,6 +168,24 @@ export function getReportSegsList(bowlprop, ring) {
             seginfo[idx].length += seginfo[idx].outlen;
             seginfo[idx].cnt++;
         }
+        if (idx2 == -1) {
+            seginfo_new.push({
+                theta: 180 / bowlprop.rings[ring].segs * bowlprop.rings[ring].seglen[seg],
+                outlen: 2 * bowlprop.seltrapz[seg][1].y,
+                inlen: 2 * bowlprop.seltrapz[seg][0].y,
+                width: bowlprop.seltrapz[seg][1].x - bowlprop.seltrapz[seg][0].x,
+                length: 2 * bowlprop.seltrapz[seg][1].y,
+                color: bowlprop.rings[ring].clrs[seg],
+                cnt: 1
+            });
+            col_size_segs.push(col + "-" + seglen);
+        } else {
+            seginfo_new[idx2].length += seginfo_new[idx2].outlen;
+            seginfo_new[idx2].cnt++;
+        }
     }
-    return seginfo;
+    if (ring == 1) {
+        console.log(seginfo_new);
+    }
+    return seginfo_new;
 }

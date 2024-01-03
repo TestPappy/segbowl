@@ -10,6 +10,7 @@ export function createReport(nwindow, bowlprop, step, ctrl, view2d, view3d, styl
             add_cutlist_row(table, bowlprop, i, step, ctrl);
         }
 
+        console.log(bowlprop);
         // Show segment numbers
         var segnum_preset = window.document.getElementById("showsegnum").checked;
         window.document.getElementById("showsegnum").checked = true;
@@ -65,49 +66,53 @@ function add_cut_list_table_with_header(nwindow, name, table, no, bowlprop, step
 }
 
 function add_cutlist_row(table, bowlprop, no, step, ctrl) {
-    var row = table.insertRow(table.rows.length);
-    var cell_ring = row.insertCell(0);
-    if (no == 0) {
-        cell_ring.innerHTML = "Base";
-    } else {
-        cell_ring.innerHTML = no;
-    }
-
-    var cell_diameter = row.insertCell(1);
-    cell_diameter.innerHTML = reduce(bowlprop.rings[no].xvals.max * 2, step, ctrl);
-
-    var cell_thickness = row.insertCell(2);
-    cell_thickness.innerHTML = reduce(bowlprop.rings[no].height, step, ctrl);
-
-    var cell_rotation = row.insertCell(3);
-    cell_rotation.innerHTML = (180 / Math.PI * bowlprop.rings[no].theta).toFixed(2).concat("&deg;");
-    
     var seglist = getReportSegsList(bowlprop, no);
 
-    if (seglist.length > 1) {
-        console.log("FOUND MORE THAN ONE SEGLIST!!!!");
+    for (var s = 0; s < seglist.length; s++) {
+        var row = table.insertRow(table.rows.length);
+        if (s == 0) {
+            var cell_ring = row.insertCell(0);
+            if (no == 0) {
+                cell_ring.innerHTML = "Base";
+            } else {
+                cell_ring.innerHTML = no;
+            }
+
+            var cell_diameter = row.insertCell(1);
+            cell_diameter.innerHTML = reduce(bowlprop.rings[no].xvals.max * 2, step, ctrl);
+
+            var cell_thickness = row.insertCell(2);
+            cell_thickness.innerHTML = reduce(bowlprop.rings[no].height, step, ctrl);
+
+            var cell_rotation = row.insertCell(3);
+            cell_rotation.innerHTML = (180 / Math.PI * bowlprop.rings[no].theta).toFixed(2).concat("&deg;");    
+        } else {
+            row.insertCell(0);
+            row.insertCell(1);
+            row.insertCell(2);
+            row.insertCell(3);
+        }
+        var cell_segments = row.insertCell(4);
+        cell_segments.innerHTML = seglist[s].cnt;
+
+        var cell_cut_angle = row.insertCell(5);
+        cell_cut_angle.innerHTML = seglist[s].theta.toFixed(2).concat("&deg;");
+
+        var cell_outside_length = row.insertCell(6);
+        cell_outside_length.innerHTML = reduce(seglist[s].outlen, step, ctrl);
+
+        var cell_inside_length = row.insertCell(7);
+        cell_inside_length.innerHTML = reduce(seglist[s].inlen, step, ctrl);
+
+        var cell_strip_width = row.insertCell(8);
+        cell_strip_width.innerHTML = reduce(seglist[s].width, step, ctrl);
+
+        var cell_strip_length = row.insertCell(9);
+        cell_strip_length.innerHTML = reduce(seglist[s].length, step, ctrl);
+
+        var cell_strip_length_total = row.insertCell(10);
+        cell_strip_length_total.innerHTML = reduce(seglist[s].length + (ctrl.sawkerf * seglist[s].cnt), step, ctrl)
     }
-
-    var cell_segments = row.insertCell(4);
-    cell_segments.innerHTML = seglist[0].cnt;
-
-    var cell_cut_angle = row.insertCell(5);
-    cell_cut_angle.innerHTML = seglist[0].theta.toFixed(2).concat("&deg;");
-
-    var cell_outside_length = row.insertCell(6);
-    cell_outside_length.innerHTML = reduce(seglist[0].outlen, step, ctrl);
-
-    var cell_inside_length = row.insertCell(7);
-    cell_inside_length.innerHTML = reduce(seglist[0].inlen, step, ctrl);
-
-    var cell_strip_width = row.insertCell(8);
-    cell_strip_width.innerHTML = reduce(seglist[0].width, step, ctrl);
-
-    var cell_strip_length = row.insertCell(9);
-    cell_strip_length.innerHTML = reduce(seglist[0].length, step, ctrl);
-
-    var cell_strip_length_total = row.insertCell(10);
-    cell_strip_length_total.innerHTML = reduce(seglist[0].length + (ctrl.sawkerf * seglist[0].cnt), step, ctrl)
 }
 
 export function reduce(value, step = null, ctrl) {

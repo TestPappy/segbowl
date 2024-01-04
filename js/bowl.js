@@ -5,10 +5,10 @@
 */
 import * as THREE from 'three';
 import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
-import { dfltclrs, dfltlens } from './common.mjs';
+import { dfltclrs, dfltwood, dfltlens } from './common.mjs';
 import { screenToRealPoint, realToScreen, screenToReal, calcBezPath, splitRingY, offsetCurve } from './bowl_calculator.mjs';
 import { calcRings, calcRingTrapz } from './ring_calculator.mjs';
-import { createReport } from './report.mjs';
+import { createReport, getReportSegsList } from './report.mjs';
 import { clearCanvas, drawCurve, drawRing, drawSegProfile } from './drawing.js';
 import * as PERSISTENCE from './persistence.mjs';
 
@@ -22,7 +22,7 @@ import * as PERSISTENCE from './persistence.mjs';
         pad: .125,
         cpoint: null,
         curvesegs: 50,
-        rings: [{ height: .5, segs: 12, clrs: dfltclrs(), seglen: dfltlens(), xvals: [], theta: 0 }],
+        rings: [{ height: .5, segs: 12, clrs: dfltclrs(), wood: dfltwood(), seglen: dfltlens(), xvals: [], theta: 0 }],
         usedrings: 1,
 
         seltrapz: null,
@@ -492,6 +492,9 @@ import * as PERSISTENCE from './persistence.mjs';
             if (bowlprop.rings[ctrl.selring].clrs.length < bowlprop.rings[ctrl.selring].segs) {
                 bowlprop.rings[ctrl.selring].clrs.push(bowlprop.rings[ctrl.selring].clrs[bowlprop.rings[ctrl.selring].clrs.length - 1]);
             }
+            if (bowlprop.rings[ctrl.selring].wood.length < bowlprop.rings[ctrl.selring].segs) {
+                bowlprop.rings[ctrl.selring].wood.push(bowlprop.rings[ctrl.selring].wood[bowlprop.rings[ctrl.selring].wood.length - 1]);
+            }
             bowlprop.rings[ctrl.selring].seglen = dfltlens(bowlprop.rings[ctrl.selring].segs); // just reset this
         } else if (bowlprop.rings[ctrl.selring].segs > 3) {
             bowlprop.rings[ctrl.selring].segs -= 1;
@@ -553,11 +556,13 @@ import * as PERSISTENCE from './persistence.mjs';
                 height: bowlprop.rings[ctrl.copyring].height,
                 segs: bowlprop.rings[ctrl.copyring].segs,
                 clrs: [],
+                wood: [],
                 xvals: [],
                 seglen: [],
                 theta: bowlprop.rings[ctrl.copyring].theta,
             };
             for (var c in bowlprop.rings[ctrl.copyring].clrs) { bowlprop.rings[ctrl.selring].clrs.push(bowlprop.rings[ctrl.copyring].clrs[c]); }
+            for (var c in bowlprop.rings[ctrl.copyring].wood) { bowlprop.rings[ctrl.selring].wood.push(bowlprop.rings[ctrl.copyring].wood[c]); }
             for (var c in bowlprop.rings[ctrl.copyring].seglen) { bowlprop.rings[ctrl.selring].seglen.push(bowlprop.rings[ctrl.copyring].seglen[c]); }
             ctrl.copyring = null;
             drawCanvas();
@@ -569,6 +574,7 @@ import * as PERSISTENCE from './persistence.mjs';
         var clr = this.style.backgroundColor;
         for (var i = 0; i < ctrl.selseg.length; i++) {
             bowlprop.rings[ctrl.selring].clrs[ctrl.selseg[i]] = clr;
+            bowlprop.rings[ctrl.selring].wood[ctrl.selseg[i]] = getWoodByColor(clr);
         }
         drawCanvas();
         build3D();
@@ -720,40 +726,17 @@ import * as PERSISTENCE from './persistence.mjs';
         }
     }
 
-    function getReportSegsList(ring) {
-        var donesegs = [];
-        var seginfo = [];
-        calcRingTrapz(bowlprop, ring, false);
-        for (var seg = 0; seg < bowlprop.rings[ring].segs; seg++) {
-            var idx = donesegs.indexOf(bowlprop.rings[ring].seglen[seg]);
-            if (idx == -1) {
-                seginfo.push({
-                    theta: 180 / bowlprop.rings[ring].segs * bowlprop.rings[ring].seglen[seg],
-                    outlen: 2 * bowlprop.seltrapz[seg][1].y,
-                    inlen: 2 * bowlprop.seltrapz[seg][0].y,
-                    width: bowlprop.seltrapz[seg][1].x - bowlprop.seltrapz[seg][0].x,
-                    length: 2 * bowlprop.seltrapz[seg][1].y,
-                    cnt: 1
-                });
-                donesegs.push(bowlprop.rings[ring].seglen[seg]);
-            } else {
-                seginfo[idx].length += seginfo[idx].outlen;
-                seginfo[idx].cnt++;
-            }
-        }
-        return seginfo;
-    }
-
     function updateRingInfo() {
         if (document.getElementById("canvas2").style.display != "none" && ctrl.selring != null) {
             var step = 1 / parseInt(document.getElementById("rptfmt").value);
             var txt = ["Ring:", ctrl.selring.toString(), "<br>",
                 "Diameter:", reduce(bowlprop.rings[ctrl.selring].xvals.max * 2, step), "<br>",
                 "Thickness:", reduce(bowlprop.rings[ctrl.selring].height, step), '<br><hr align="left" width="20%">'];
-            var seglist = getReportSegsList(ctrl.selring);
+            var seglist = getReportSegsList(bowlprop, ctrl.selring);
             for (var seg = 0; seg < seglist.length; seg++) {
                 txt = txt.concat([
                     "Segments:", seglist[seg].cnt, "<br>",
+                    "&nbsp;Wood:", seglist[seg].wood[0].toUpperCase() + seglist[seg].wood.substring(1), "<br>",
                     "&nbsp;Angle:", seglist[seg].theta.toFixed(2).concat("&deg;"), "<br>",
                     "&nbsp;Outside Length:", reduce(seglist[seg].outlen, step), "<br>",
                     "&nbsp;Inside Length:", reduce(seglist[seg].inlen, step), "<br>",
@@ -775,6 +758,23 @@ import * as PERSISTENCE from './persistence.mjs';
         createReport(nwindow, bowlprop, step, ctrl, view2d, view3d, style);
     }
 
+    function getWoodByColor(clr) {
+        var woodByColorMap = new Map();
+        woodByColorMap.set('rgb(226, 202, 160)', 'maple');  //#E2CAA0
+        woodByColorMap.set('rgb(173, 116, 63)', 'beech');   //#AD743F
+        woodByColorMap.set('rgb(153, 80, 24)', 'cherry');   //#995018
+        woodByColorMap.set('rgb(123, 79, 52)', 'walnut');   //#7B4F34
+        woodByColorMap.set('rgb(98, 51, 41)', 'teak');      //#623329
+        woodByColorMap.set('rgb(68, 37, 43)', 'cocobolo');  //#E2CAA0
+        woodByColorMap.set('rgb(132, 62, 75)', 'amaranth'); //#843E4B
+        if (woodByColorMap.has(clr)) {
+            return woodByColorMap.get(clr);
+        } else {
+            console.log("No match for: " + clr);
+            return "unknown";
+        }
+    }
+
     function showPalette() {
         var woodcolors = [
             '#FDFAF4', '#E2CAA0', '#C29A1F', '#C98753', '#AC572F', '#995018', '#7B4F34',
@@ -789,6 +789,7 @@ import * as PERSISTENCE from './persistence.mjs';
 
         document.getElementById("colortype").onchange =
             function () {
+                var clist = [];
                 if (this.value == "wood") {
                     clist = woodcolors;
                 } else {
@@ -849,6 +850,7 @@ import * as PERSISTENCE from './persistence.mjs';
         var tmppalette = document.getElementsByClassName("tmppal");
         for (var i = 0; i < btnpalette.length; i++) {
             btnpalette[i].style.backgroundColor = tmppalette[i].style.backgroundColor;
+            btnpalette[i].title = getWoodByColor(tmppalette[i].style.backgroundColor);
         }
         document.getElementById("palettewindow").style.display = "none";
     };

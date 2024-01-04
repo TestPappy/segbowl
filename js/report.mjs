@@ -92,7 +92,7 @@ function add_cutlist_row(table, bowlprop, no, step, ctrl) {
             row.insertCell(3);
         }
         var cell_color = row.insertCell(4);
-        cell_color.innerHTML = seglist[s].wood;
+        cell_color.innerHTML = seglist[s].wood[0].toUpperCase() + seglist[s].wood.substring(1);
 
         var cell_segments = row.insertCell(5);
         cell_segments.innerHTML = seglist[s].cnt;

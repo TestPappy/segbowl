@@ -8,7 +8,7 @@ import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
 import { dfltclrs, dfltwood, dfltlens } from './common.mjs';
 import { screenToRealPoint, realToScreen, screenToReal, calcBezPath, splitRingY, offsetCurve } from './bowl_calculator.mjs';
 import { calcRings, calcRingTrapz } from './ring_calculator.mjs';
-import { createReport } from './report.mjs';
+import { createReport, getReportSegsList } from './report.mjs';
 import { clearCanvas, drawCurve, drawRing, drawSegProfile } from './drawing.js';
 import * as PERSISTENCE from './persistence.mjs';
 
@@ -726,40 +726,17 @@ import * as PERSISTENCE from './persistence.mjs';
         }
     }
 
-    function getReportSegsList(ring) {
-        var donesegs = [];
-        var seginfo = [];
-        calcRingTrapz(bowlprop, ring, false);
-        for (var seg = 0; seg < bowlprop.rings[ring].segs; seg++) {
-            var idx = donesegs.indexOf(bowlprop.rings[ring].seglen[seg]);
-            if (idx == -1) {
-                seginfo.push({
-                    theta: 180 / bowlprop.rings[ring].segs * bowlprop.rings[ring].seglen[seg],
-                    outlen: 2 * bowlprop.seltrapz[seg][1].y,
-                    inlen: 2 * bowlprop.seltrapz[seg][0].y,
-                    width: bowlprop.seltrapz[seg][1].x - bowlprop.seltrapz[seg][0].x,
-                    length: 2 * bowlprop.seltrapz[seg][1].y,
-                    cnt: 1
-                });
-                donesegs.push(bowlprop.rings[ring].seglen[seg]);
-            } else {
-                seginfo[idx].length += seginfo[idx].outlen;
-                seginfo[idx].cnt++;
-            }
-        }
-        return seginfo;
-    }
-
     function updateRingInfo() {
         if (document.getElementById("canvas2").style.display != "none" && ctrl.selring != null) {
             var step = 1 / parseInt(document.getElementById("rptfmt").value);
             var txt = ["Ring:", ctrl.selring.toString(), "<br>",
                 "Diameter:", reduce(bowlprop.rings[ctrl.selring].xvals.max * 2, step), "<br>",
                 "Thickness:", reduce(bowlprop.rings[ctrl.selring].height, step), '<br><hr align="left" width="20%">'];
-            var seglist = getReportSegsList(ctrl.selring);
+            var seglist = getReportSegsList(bowlprop, ctrl.selring);
             for (var seg = 0; seg < seglist.length; seg++) {
                 txt = txt.concat([
                     "Segments:", seglist[seg].cnt, "<br>",
+                    "&nbsp;Wood:", seglist[seg].wood[0].toUpperCase() + seglist[seg].wood.substring(1), "<br>",
                     "&nbsp;Angle:", seglist[seg].theta.toFixed(2).concat("&deg;"), "<br>",
                     "&nbsp;Outside Length:", reduce(seglist[seg].outlen, step), "<br>",
                     "&nbsp;Inside Length:", reduce(seglist[seg].inlen, step), "<br>",

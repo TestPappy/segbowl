@@ -18,3 +18,7 @@ export function dfltlens(cnt = 12) {
     }
     return len;
 }
+
+export function capitalize(str) {
+    return str[0].toUpperCase() + str.substring(1)
+}

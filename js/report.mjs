@@ -1,5 +1,6 @@
 import { calcRingTrapz } from "./ring_calculator.mjs";
 import { clearCanvas, drawCurve, drawRing, drawSegProfile } from "./drawing.js";
+import { capitalize } from "./common.mjs";
 
 export function createReport(nwindow, bowlprop, step, ctrl, view2d, view3d, style) {
     
@@ -92,7 +93,7 @@ function add_cutlist_row(table, bowlprop, no, step, ctrl) {
             row.insertCell(3);
         }
         var cell_color = row.insertCell(4);
-        cell_color.innerHTML = seglist[s].wood[0].toUpperCase() + seglist[s].wood.substring(1);
+        cell_color.innerHTML = capitalize(seglist[s].wood);
 
         var cell_segments = row.insertCell(5);
         cell_segments.innerHTML = seglist[s].cnt;
@@ -143,46 +144,29 @@ export function reduce(value, step = null, ctrl) {
 }
 
 export function getReportSegsList(bowlprop, ring) {
-    var donesegs = [];
     var col_size_segs = [];
     var seginfo = [];
-    var seginfo_new = [];
     calcRingTrapz(bowlprop, ring, false);
     for (var seg = 0; seg < bowlprop.rings[ring].segs; seg++) {
         var col = bowlprop.rings[ring].clrs[seg];
         var seglen = bowlprop.rings[ring].seglen[seg];
-        var idx = donesegs.indexOf(bowlprop.rings[ring].seglen[seg]);
-        var idx2 = col_size_segs.indexOf(col + "-" + seglen);
+        var idx = col_size_segs.indexOf(col + "-" + seglen);
         if (idx == -1) {
             seginfo.push({
-                theta: 180 / bowlprop.rings[ring].segs * bowlprop.rings[ring].seglen[seg],
+                theta:  180 / bowlprop.rings[ring].segs * bowlprop.rings[ring].seglen[seg],
                 outlen: 2 * bowlprop.seltrapz[seg][1].y,
-                inlen: 2 * bowlprop.seltrapz[seg][0].y,
-                width: bowlprop.seltrapz[seg][1].x - bowlprop.seltrapz[seg][0].x,
+                inlen:  2 * bowlprop.seltrapz[seg][0].y,
+                width:  bowlprop.seltrapz[seg][1].x - bowlprop.seltrapz[seg][0].x,
                 length: 2 * bowlprop.seltrapz[seg][1].y,
-                cnt: 1
+                color:  bowlprop.rings[ring].clrs[seg],
+                wood:   bowlprop.rings[ring].wood[seg],
+                cnt:    1
             });
-            donesegs.push(bowlprop.rings[ring].seglen[seg]);
+            col_size_segs.push(col + "-" + seglen);
         } else {
             seginfo[idx].length += seginfo[idx].outlen;
             seginfo[idx].cnt++;
         }
-        if (idx2 == -1) {
-            seginfo_new.push({
-                theta: 180 / bowlprop.rings[ring].segs * bowlprop.rings[ring].seglen[seg],
-                outlen: 2 * bowlprop.seltrapz[seg][1].y,
-                inlen: 2 * bowlprop.seltrapz[seg][0].y,
-                width: bowlprop.seltrapz[seg][1].x - bowlprop.seltrapz[seg][0].x,
-                length: 2 * bowlprop.seltrapz[seg][1].y,
-                color: bowlprop.rings[ring].clrs[seg],
-                wood: bowlprop.rings[ring].wood[seg],
-                cnt: 1
-            });
-            col_size_segs.push(col + "-" + seglen);
-        } else {
-            seginfo_new[idx2].length += seginfo_new[idx2].outlen;
-            seginfo_new[idx2].cnt++;
-        }
     }
-    return seginfo_new;
+    return seginfo;
 }

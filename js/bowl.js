@@ -5,9 +5,9 @@
 */
 import * as THREE from 'three';
 import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
-import { dfltclrs, dfltwood, dfltlens } from './common.mjs';
+import { dfltclrs, dfltwood, dfltlens, capitalize } from './common.mjs';
 import { screenToRealPoint, realToScreen, screenToReal, calcBezPath, splitRingY, offsetCurve } from './bowl_calculator.mjs';
-import { calcRings, calcRingTrapz } from './ring_calculator.mjs';
+import { calcRings } from './ring_calculator.mjs';
 import { createReport, getReportSegsList } from './report.mjs';
 import { clearCanvas, drawCurve, drawRing, drawSegProfile } from './drawing.js';
 import * as PERSISTENCE from './persistence.mjs';
@@ -736,7 +736,7 @@ import * as PERSISTENCE from './persistence.mjs';
             for (var seg = 0; seg < seglist.length; seg++) {
                 txt = txt.concat([
                     "Segments:", seglist[seg].cnt, "<br>",
-                    "&nbsp;Wood:", seglist[seg].wood[0].toUpperCase() + seglist[seg].wood.substring(1), "<br>",
+                    "&nbsp;Wood:", capitalize(seglist[seg].wood), "<br>",
                     "&nbsp;Angle:", seglist[seg].theta.toFixed(2).concat("&deg;"), "<br>",
                     "&nbsp;Outside Length:", reduce(seglist[seg].outlen, step), "<br>",
                     "&nbsp;Inside Length:", reduce(seglist[seg].inlen, step), "<br>",

@@ -1,4 +1,4 @@
-import { loadDesign, saveDesign, checkStorage, clearDesign } from "../persistence.mjs";
+import { loadDesign, loadSettings, checkStorage, clearDesignAndSettings, saveDesignAndSettings } from "../persistence.mjs";
 require('jest-localstorage-mock');
 
 describe('persistence can', () => {
@@ -12,12 +12,15 @@ describe('persistence can', () => {
     it('save a design', () => {
         var bowlpropMock = {
             test: "123"
-        }
+        };
+        var ctrlMock = {
+            inch: false
+        };
         // Saving...
-        saveDesign(bowlpropMock);
-        expect(Object.keys(localStorage.__STORE__).length).toBe(1);
-        expect(localStorage.setItem).toHaveBeenLastCalledWith("bowlDesign", JSON.stringify(bowlpropMock));
-
+        saveDesignAndSettings(bowlpropMock, ctrlMock);
+        expect(Object.keys(localStorage.__STORE__).length).toBe(2);
+        expect(localStorage.setItem).toHaveBeenCalledWith("bowlDesign", JSON.stringify(bowlpropMock));
+        expect(localStorage.setItem).toHaveBeenLastCalledWith("bowlSettings", JSON.stringify(ctrlMock));
     });
 
     it('can check for an existing design', () => {
@@ -42,15 +45,26 @@ describe('persistence can', () => {
         expect(loadedBowlprop.test).toBe("123");
     });
 
+    it('load an existing setting', () => {
+        var ctrlMock = {
+            inch: false
+        };
+        localStorage.setItem("bowlSettings", JSON.stringify(ctrlMock));
+        var loadedSettings = loadSettings();
+        expect(localStorage.getItem).toHaveBeenLastCalledWith("bowlSettings");
+        expect(loadedSettings.inch).toBe(false);
+    });
+
     it('remove an existing design', () => {
         var bowlpropMock = {
             test: "123",
             timestamp: "0815-4711"
         };
         localStorage.setItem("bowlDesign", JSON.stringify(bowlpropMock));
+        localStorage.setItem("bowlSettings", JSON.stringify(bowlpropMock));
         // Deleting...
-        clearDesign();
+        clearDesignAndSettings();
         expect(Object.keys(localStorage.__STORE__).length).toBe(0);
-        expect(localStorage.removeItem).toHaveBeenCalledTimes(1);
+        expect(localStorage.removeItem).toHaveBeenCalledTimes(2);
     });
 });

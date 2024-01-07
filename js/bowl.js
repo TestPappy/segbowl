@@ -611,6 +611,11 @@ import * as PERSISTENCE from './persistence.mjs';
         resizeWindow();
     }
 
+    function setUnit() {
+        document.getElementById("inch").checked = ctrl.inch
+        document.getElementById("mm").checked = !ctrl.inch
+    }
+
     function unitChange() {
         var thick = document.getElementById("inptThick");
         var pad = document.getElementById("inptPad");
@@ -867,7 +872,7 @@ import * as PERSISTENCE from './persistence.mjs';
     }
 
     function save() {
-        PERSISTENCE.saveDesign(bowlprop);
+        PERSISTENCE.saveDesignAndSettings(bowlprop, ctrl);
         checkStorage();
         document.getElementById("loaddesign").disabled = false;
     }
@@ -875,13 +880,16 @@ import * as PERSISTENCE from './persistence.mjs';
     function load() {
         if (PERSISTENCE.checkStorage() !== null) {
             bowlprop = PERSISTENCE.loadDesign();
+            ctrl = PERSISTENCE.loadSettings();
         }
+        setUnit();
+        loadSawKerf();
         drawCanvas();
         build3D();
     }
 
     function clear() {
-        PERSISTENCE.clearDesign();
+        PERSISTENCE.clearDesignAndSettings();
         checkStorage();
     }
 

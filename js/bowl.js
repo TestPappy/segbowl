@@ -180,6 +180,41 @@ import * as PERSISTENCE from './persistence.mjs';
         ctx.stroke();
     }
 
+    function drawScale(ctx, size) {
+        var topleft = realToScreen(view2d, -bowlprop.radius, bowlprop.height);
+        var botright = realToScreen(view2d, bowlprop.radius, 0);
+        var middleX = (botright.x + topleft.x)/2;
+        var middleY = botright.y - topleft.y;
+        ctx.lineWidth = 1;
+        ctx.strokeStyle = "#000000";
+        ctx.beginPath();
+        ctx.moveTo(middleX, 10);
+        ctx.lineTo(botright.x, 10);
+        ctx.moveTo(middleX, 5);
+        ctx.lineTo(middleX, 15);
+        ctx.moveTo(botright.x, 5);
+        ctx.lineTo(botright.x, 15);
+        ctx.stroke();
+
+        ctx.fillStyle = "black";
+        ctx.font = "12px Arial";
+        ctx.textAlign = "center";
+        ctx.fillText(size, (middleX + botright.x)/2, 25);
+        ctx.stroke();
+    }
+
+    function getMaxDiameter() {
+        var max = 0;
+        var maxDiameter = 0;
+        for(var i = 0; i < bowlprop.rings.length; i++) {
+            var diameter = bowlprop.rings[i].xvals.max * 2;
+            if (diameter > maxDiameter) {
+                max = i;
+            }
+        }
+        return reduce(bowlprop.rings[max].xvals.max);
+    }
+
     function drawControlPoints(ctx) {
         for (var i = 0; i < bowlprop.cpoint.length; i++) {
             ctx.lineWidth = style.point.width;
@@ -227,6 +262,7 @@ import * as PERSISTENCE from './persistence.mjs';
         drawControlLines(view2d.ctx);
         drawCurve(view2d.ctx, bowlprop, view2d, style);
         drawControlPoints(view2d.ctx);
+        drawScale(view2d.ctx, getMaxDiameter());
         if (document.getElementById("canvas2").style.display != "none" && ctrl.selring != null) {
             drawRing(view2d.ctx2, ctrl.selring, bowlprop, view2d, ctrl, style);
         }

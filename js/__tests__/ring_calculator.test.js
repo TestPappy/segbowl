@@ -1,5 +1,5 @@
 import { Vector2 } from "three";
-import { dfltclrs, dfltlens } from "../common.mjs";
+import { defaultColors, defaultLens } from "../common.mjs";
 import { calcRings, calcRingTrapz } from "../ring_calculator.mjs";
 
 var canvasinches = 8;
@@ -24,10 +24,10 @@ var bowlprop = {
         { x: centerx + 2.5 * scale, y: view2d.bottom - 2.5 * scale },
         { x: centerx + 3.5 * scale, y: view2d.bottom - 3.0 * scale }, // This point is will also be start of next bezier curve
     ],
-    rings: [{ height: .5, segs: 12, clrs: dfltclrs(), seglen: dfltlens(), xvals: [], theta: 0 },
-            { height: .5, segs: 14, clrs: dfltclrs(), seglen: dfltlens(), xvals: [], theta: 0 },
-            { height: .5, segs: 16, clrs: dfltclrs(), seglen: dfltlens(), xvals: [], theta: 0 },
-            { height: .5, segs: 18, clrs: dfltclrs(), seglen: dfltlens(), xvals: [], theta: 0 },
+    rings: [{ height: .5, segs: 12, clrs: defaultColors(), seglen: defaultLens(), xvals: [], theta: 0 },
+            { height: .5, segs: 14, clrs: defaultColors(), seglen: defaultLens(), xvals: [], theta: 0 },
+            { height: .5, segs: 16, clrs: defaultColors(), seglen: defaultLens(), xvals: [], theta: 0 },
+            { height: .5, segs: 18, clrs: defaultColors(), seglen: defaultLens(), xvals: [], theta: 0 },
     ],
     curvesegs: 6,
     thick: 0.25,

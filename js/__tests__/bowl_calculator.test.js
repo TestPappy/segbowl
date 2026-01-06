@@ -1,6 +1,6 @@
 import { Vector2 } from "three";
 import { screenToRealPoint, realToScreen, screenToReal, splitRingY, calcBezPath, offsetCurve } from "../bowl_calculator.mjs";
-import { dfltclrs, dfltlens } from "../common.mjs";
+import { defaultColors, defaultLens } from "../common.mjs";
 var canvasinches = 8;
 var width = 500;
 var height = 500;
@@ -102,10 +102,10 @@ describe('splitRingY', () => {
             { x: centerx + 2.0 * scale, y: view2d.bottom - 2.0 * scale },
             { x: centerx + 2.5 * scale, y: view2d.bottom - 2.5 * scale }, // This point is will also be start of next bezier curve
         ],
-        rings: [{ height: .5, segs: 12, clrs: dfltclrs(), seglen: dfltlens(), xvals: [], theta: 0 },
-                { height: .75, segs: 12, clrs: dfltclrs(), seglen: dfltlens(), xvals: [], theta: 0 },
-                { height: .75, segs: 12, clrs: dfltclrs(), seglen: dfltlens(), xvals: [], theta: 0 },
-                { height: .75, segs: 12, clrs: dfltclrs(), seglen: dfltlens(), xvals: [], theta: 0 },
+        rings: [{ height: .5, segs: 12, clrs: defaultColors(), seglen: defaultLens(), xvals: [], theta: 0 },
+                { height: .75, segs: 12, clrs: defaultColors(), seglen: defaultLens(), xvals: [], theta: 0 },
+                { height: .75, segs: 12, clrs: defaultColors(), seglen: defaultLens(), xvals: [], theta: 0 },
+                { height: .75, segs: 12, clrs: defaultColors(), seglen: defaultLens(), xvals: [], theta: 0 },
         ],
         curvesegs: 4
     };

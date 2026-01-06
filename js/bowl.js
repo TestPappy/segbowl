@@ -5,7 +5,7 @@
 */
 import * as THREE from 'three';
 import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
-import { dfltclrs, dfltwood, dfltlens, capitalize } from './common.mjs';
+import { defaultColors, defaultWood, defaultLens, capitalize } from './common.mjs';
 import { screenToRealPoint, realToScreen, screenToReal, calcBezPath, splitRingY, offsetCurve } from './bowl_calculator.mjs';
 import { calcRings } from './ring_calculator.mjs';
 import { createReport, getReportSegsList } from './report.mjs';
@@ -13,7 +13,7 @@ import { clearCanvas, drawCurve, drawRing, drawSegProfile } from './drawing.js';
 import * as PERSISTENCE from './persistence.mjs';
 
 (() => {
-    var version = "0.2";
+    const version = "0.2";
 
     var bowlprop = {
         radius: null,
@@ -22,7 +22,7 @@ import * as PERSISTENCE from './persistence.mjs';
         pad: .125,
         cpoint: null,
         curvesegs: 50,
-        rings: [{ height: .5, segs: 12, clrs: dfltclrs(), wood: dfltwood(), seglen: dfltlens(), xvals: [], theta: 0 }],
+        rings: [{ height: .5, segs: 12, clrs: defaultColors(), wood: defaultWood(), seglen: defaultLens(), xvals: [], theta: 0 }],
         usedrings: 1,
 
         seltrapz: null,
@@ -91,52 +91,53 @@ import * as PERSISTENCE from './persistence.mjs';
         view2d.canvas.ondblclick = addRemovePoint;
         view2d.canvas2.onmousedown = segClick;
 
-        document.getElementById("btnView").onclick = showMenu;
-        document.getElementById("btnOptions").onclick = showMenu;
-        document.getElementById("btnBowl").onclick = showMenu;
-        document.getElementById("btnRing").onclick = showMenu;
-        document.getElementById("btnSeg").onclick = showMenu;
-        document.getElementById("btnCopy").onclick = ringCopy;
-        document.getElementById("btnPaste").onclick = ringPaste;
-        document.getElementById("zoomIn").onclick = zoom;
-        document.getElementById("zoomOut").onclick = zoom;
-        document.getElementById("inptThick").oninput = thickChange;
-        document.getElementById("inptPad").oninput = padChange;
-        document.getElementById("showsegs").onchange = drawCanvas;
-        document.getElementById("showsegnum").onchange = drawCanvas;
-        document.getElementById("showratio").onchange = drawCanvas;
-        document.getElementById("segHup").onclick = setSegHeight;
-        document.getElementById("segHdn").onclick = setSegHeight;
-        document.getElementById("segNup").onclick = setSegCnt;
-        document.getElementById("segNdn").onclick = setSegCnt;
-        document.getElementById("segLup").onclick = setSegL;
-        document.getElementById("segLdn").onclick = setSegL;
-        document.getElementById("segLreset").onclick = setSegL;
-        document.getElementById("ringrot").onchange = rotateRing;
-        document.getElementById("btnTwist").onclick = twist;
-        document.getElementById("viewRing").onclick = setView;
-        document.getElementById("view3D").onclick = setView;
-        document.getElementById("viewProf").onclick = setView;
-        document.getElementById("inch").onclick = unitChange;
-        document.getElementById("mm").onclick = unitChange;
-        document.getElementById("gentable").onclick = genReport;
-        document.getElementById("about").onclick = about;
-        document.getElementById("loaddesign").onclick = load;
-        document.getElementById("savedesign").onclick = save;
-        document.getElementById("cleardesign").onclick = clear;
-        document.getElementById("sawkerf").onchange = saveSawKerf;
+        const el = id => document.getElementById(id);
+        el("btnView").onclick = showMenu;
+        el("btnOptions").onclick = showMenu;
+        el("btnBowl").onclick = showMenu;
+        el("btnRing").onclick = showMenu;
+        el("btnSeg").onclick = showMenu;
+        el("btnCopy").onclick = ringCopy;
+        el("btnPaste").onclick = ringPaste;
+        el("zoomIn").onclick = zoom;
+        el("zoomOut").onclick = zoom;
+        el("inptThick").oninput = thickChange;
+        el("inptPad").oninput = padChange;
+        el("showsegs").onchange = drawCanvas;
+        el("showsegnum").onchange = drawCanvas;
+        el("showratio").onchange = drawCanvas;
+        el("segHup").onclick = setSegHeight;
+        el("segHdn").onclick = setSegHeight;
+        el("segNup").onclick = setSegCnt;
+        el("segNdn").onclick = setSegCnt;
+        el("segLup").onclick = setSegL;
+        el("segLdn").onclick = setSegL;
+        el("segLreset").onclick = setSegL;
+        el("ringrot").onchange = rotateRing;
+        el("btnTwist").onclick = twist;
+        el("viewRing").onclick = setView;
+        el("view3D").onclick = setView;
+        el("viewProf").onclick = setView;
+        el("inch").onclick = unitChange;
+        el("mm").onclick = unitChange;
+        el("gentable").onclick = genReport;
+        el("about").onclick = about;
+        el("loaddesign").onclick = load;
+        el("savedesign").onclick = save;
+        el("cleardesign").onclick = clear;
+        el("sawkerf").onchange = saveSawKerf;
         window.addEventListener('resize', resizeWindow);
         var btnclrclass = document.getElementsByClassName("clrbtn");
         for (var i = 0; i < btnclrclass.length; i++) {
             btnclrclass[i].onclick = colorChange;
         }
 
-        document.getElementById("btnPal").onclick = showPalette;
+        el("btnPal").onclick = showPalette;
 
         drawCanvas();
 
         // Now init the 3D view
-        view3d.canvas = document.getElementById("canvas3d");
+        view3d.canvas = el("canvas3d");
         view3d.canvas.width = view2d.ctx.canvas.width;
         view3d.canvas.height = view2d.ctx.canvas.height;
 
@@ -178,6 +179,40 @@ import * as PERSISTENCE from './persistence.mjs';
             ctx.lineTo(bowlprop.cpoint[i + 3].x, bowlprop.cpoint[i + 3].y);
         }
         ctx.stroke();
+    }
+
+    function drawScale(ctx, size) {
+        var topleft = realToScreen(view2d, -bowlprop.radius, bowlprop.height);
+        var botright = realToScreen(view2d, bowlprop.radius, 0);
+        var middleX = (botright.x + topleft.x)/2;
+        ctx.lineWidth = 1;
+        ctx.strokeStyle = "#000000";
+        ctx.beginPath();
+        ctx.moveTo(middleX, 10);
+        ctx.lineTo(botright.x, 10);
+        ctx.moveTo(middleX, 5);
+        ctx.lineTo(middleX, 15);
+        ctx.moveTo(botright.x, 5);
+        ctx.lineTo(botright.x, 15);
+        ctx.stroke();
+
+        ctx.fillStyle = "black";
+        ctx.font = "12px Arial";
+        ctx.textAlign = "center";
+        ctx.fillText(size, (middleX + botright.x)/2, 25);
+        ctx.stroke();
+    }
+
+    function getMaxDiameter() {
+        var max = 0;
+        var maxDiameter = 0;
+        for(let i = 0; i < bowlprop.rings.length; i++) {
+            var diameter = bowlprop.rings[i].xvals.max * 2;
+            if (diameter > maxDiameter) {
+                max = i;
+            }
+        }
+        return reduce(bowlprop.rings[max].xvals.max);
     }
 
     function drawControlPoints(ctx) {
@@ -227,6 +262,7 @@ import * as PERSISTENCE from './persistence.mjs';
         drawControlLines(view2d.ctx);
         drawCurve(view2d.ctx, bowlprop, view2d, style);
         drawControlPoints(view2d.ctx);
+        drawScale(view2d.ctx, getMaxDiameter());
         if (document.getElementById("canvas2").style.display != "none" && ctrl.selring != null) {
             drawRing(view2d.ctx2, ctrl.selring, bowlprop, view2d, ctrl, style);
         }
@@ -495,10 +531,10 @@ import * as PERSISTENCE from './persistence.mjs';
             if (bowlprop.rings[ctrl.selring].wood.length < bowlprop.rings[ctrl.selring].segs) {
                 bowlprop.rings[ctrl.selring].wood.push(bowlprop.rings[ctrl.selring].wood[bowlprop.rings[ctrl.selring].wood.length - 1]);
             }
-            bowlprop.rings[ctrl.selring].seglen = dfltlens(bowlprop.rings[ctrl.selring].segs); // just reset this
+            bowlprop.rings[ctrl.selring].seglen = defaultLens(bowlprop.rings[ctrl.selring].segs); // just reset this
         } else if (bowlprop.rings[ctrl.selring].segs > 3) {
             bowlprop.rings[ctrl.selring].segs -= 1;
-            bowlprop.rings[ctrl.selring].seglen = dfltlens(bowlprop.rings[ctrl.selring].segs); // just reset this
+            bowlprop.rings[ctrl.selring].seglen = defaultLens(bowlprop.rings[ctrl.selring].segs); // just reset this
         }
         ctrl.selseg = [];
         setSegCntTxt();
@@ -508,7 +544,7 @@ import * as PERSISTENCE from './persistence.mjs';
 
     function setSegL() {
         if (this.id == "segLreset") {
-            bowlprop.rings[ctrl.selring].seglen = dfltlens(bowlprop.rings[ctrl.selring].segs);
+            bowlprop.rings[ctrl.selring].seglen = defaultLens(bowlprop.rings[ctrl.selring].segs);
         } else if (ctrl.selseg.length != bowlprop.rings[ctrl.selring].segs) {
             var inc = .05; // 5%
             if (this.id == "segLdn") { inc = -inc; }

@@ -5,7 +5,7 @@
 */
 import * as THREE from 'three';
 import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
-import { defaultColors, defaultWood, defaultLens, capitalize } from './common.mjs';
+import { defaultColors, defaultWood, defaultLens, capitalize, reduce as reduceValue } from './common.mjs';
 import { screenToRealPoint, realToScreen, screenToReal, calcBezPath, splitRingY, offsetCurve } from './bowl_calculator.mjs';
 import { calcRings } from './ring_calculator.mjs';
 import { createReport, getReportSegsList } from './report.mjs';
@@ -217,16 +217,10 @@ import * as PERSISTENCE from './persistence.mjs';
     }
 
     function getMaxDiameter() {
-        let max = 0;
-        let maxDiameter = 0;
-        for (let i = 0; i < bowlprop.rings.length; i++) {
-            const diameter = bowlprop.rings[i].xvals.max * 2;
-            if (diameter > maxDiameter) {
-                maxDiameter = diameter;
-                max = i;
-            }
-        }
-        return reduce(bowlprop.rings[max].xvals.max);
+        const diameters = bowlprop.rings
+            .map(r => (r.xvals && typeof r.xvals.max === 'number') ? r.xvals.max * 2 : 0);
+        const maxDiameter = Math.max(...diameters, 0);
+        return reduce(maxDiameter / 2);
     }
 
     function drawControlPoints(ctx) {
@@ -473,30 +467,8 @@ import * as PERSISTENCE from './persistence.mjs';
         }
     }
 
-    function reduce(value, step = null) {
-        if (ctrl.inch == false) {
-            return (value * 25.4).toFixed(1).concat(' mm');
-        } else if (isNaN(step) || step == "decimal") {
-            return value.toFixed(1).concat('"');
-        }
-        if (step == null) { step = ctrl.step; }
-
-        if (value == 0) { return '0"'; }
-        let numerator = Math.round(value / step);
-        const denominator = 1 / step;
-        if (numerator == denominator) { return '1"'; }
-        const gcdFn = function gcdFn(a, b) {
-            return b ? gcdFn(b, a % b) : a;
-        };
-        const gcd = gcdFn(numerator, denominator);
-        if (gcd == denominator) { return (numerator / denominator).toString().concat('"'); } // Whole number
-        if (numerator > denominator) { //Mixed fraction
-            const whole = Math.floor(numerator / denominator);
-            numerator = numerator % denominator;
-            return whole.toString().concat(' ').concat(numerator / gcd).toString().concat('&frasl;').concat((denominator / gcd).toString().concat('"'));
-        }
-        return (numerator / gcd).toString().concat('&frasl;').concat((denominator / gcd).toString().concat('"'));
-    }
+    // Wrapper to use shared reduce with local ctrl
+    const reduce = (value, step = null) => reduceValue(value, step, ctrl);
 
     function mousePos(event, canvas) {
         event = (event ? event : window.event);

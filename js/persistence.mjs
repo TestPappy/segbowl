@@ -1,16 +1,33 @@
 
 export function loadDesign() {
-    return JSON.parse(localStorage.getItem("bowlDesign"));
+    try {
+        const raw = localStorage.getItem("bowlDesign");
+        return raw ? JSON.parse(raw) : null;
+    } catch (e) {
+        console.error("Failed to load design:", e);
+        return null;
+    }
 }
 
 export function loadSettings() {
-    return JSON.parse(localStorage.getItem("bowlSettings"));
+    try {
+        const raw = localStorage.getItem("bowlSettings");
+        return raw ? JSON.parse(raw) : null;
+    } catch (e) {
+        console.error("Failed to load settings:", e);
+        return null;
+    }
 }
 
 export function checkStorage() {
-    const storedDesign = localStorage.getItem("bowlDesign");
-    if (storedDesign !== null) {
-        return JSON.parse(storedDesign).timestamp;
+    try {
+        const raw = localStorage.getItem("bowlDesign");
+        if (raw) {
+            const parsed = JSON.parse(raw);
+            return parsed?.timestamp ?? null;
+        }
+    } catch (e) {
+        console.error("Failed to check storage:", e);
     }
     return null;
 }

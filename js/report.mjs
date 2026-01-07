@@ -1,6 +1,6 @@
 import { calcRingTrapz } from "./ring_calculator.mjs";
 import { clearCanvas, drawCurve, drawRing, drawSegProfile } from "./drawing.js";
-import { capitalize } from "./common.mjs";
+import { capitalize, reduce } from "./common.mjs";
 
 export function createReport(nwindow, bowlprop, step, ctrl, view2d, view3d, style) {
     
@@ -118,30 +118,6 @@ function add_cutlist_row(table, bowlprop, no, step, ctrl) {
     }
 }
 
-export function reduce(value, step = null, ctrl) {
-    if (ctrl.inch == false) {
-        return (value * 25.4).toFixed(1).concat(' mm');
-    } else if (isNaN(step) || step == "decimal") {
-        return value.toFixed(1).concat('"');
-    }
-    if (step == null) { step = ctrl.step; }
-
-    if (value == 0) { return '0"'; }
-    let numerator = Math.round(value / step);
-    const denominator = 1 / step;
-    if (numerator == denominator) { return '1"'; }
-    const gcdFn = function gcdFn(a, b) {
-        return b ? gcdFn(b, a % b) : a;
-    };
-    const gcd = gcdFn(numerator, denominator);
-    if (gcd == denominator) { return (numerator / denominator).toString().concat('"'); } // Whole number
-    if (numerator > denominator) { //Mixed fraction
-        const whole = Math.floor(numerator / denominator);
-        numerator = numerator % denominator;
-        return whole.toString().concat(' ').concat(numerator / gcd).toString().concat('&frasl;').concat((denominator / gcd).toString().concat('"'));
-    }
-    return (numerator / gcd).toString().concat('&frasl;').concat((denominator / gcd).toString().concat('"'));
-}
 
 export function getReportSegsList(bowlprop, ring) {
     const col_size_segs = [];

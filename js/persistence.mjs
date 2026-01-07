@@ -8,7 +8,7 @@ export function loadSettings() {
 }
 
 export function checkStorage() {
-    var storedDesign = localStorage.getItem("bowlDesign");
+    const storedDesign = localStorage.getItem("bowlDesign");
     if (storedDesign !== null) {
         return JSON.parse(storedDesign).timestamp;
     }

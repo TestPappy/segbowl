@@ -1,19 +1,19 @@
 
 export function defaultColors() {
-    var clrs = [];
-    for (var i = 0; i < 12; i++) { clrs.push("#E2CAA0"); }
+    const clrs = [];
+    for (let i = 0; i < 12; i++) { clrs.push("#E2CAA0"); }
     return clrs;
 }
 
 export function defaultWood() {
-    var wood = [];
-    for (var i = 0; i < 12; i++) { wood.push("maple"); }
+    const wood = [];
+    for (let i = 0; i < 12; i++) { wood.push("maple"); }
     return wood;
 }
 
 export function defaultLens(cnt = 12) {
-    var len = [];
-    for (var i = 0; i < cnt; i++) {
+    const len = [];
+    for (let i = 0; i < cnt; i++) {
         len.push(1);
     }
     return len;

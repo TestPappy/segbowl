@@ -2,7 +2,8 @@ import { offsetCurve, calcBezPath } from "./bowl_calculator.mjs";
 import { defaultColors, defaultWood, defaultLens } from "./common.mjs";
 
 /**
- * calcRings
+ * calcRings - Calculate ring dimensions based on bowl curve
+ * @returns {{ height: number, radius: number, usedrings: number, rings: Array }} calculated values
  */
 export function calcRings(view2d, bowlprop) {
     const paths = offsetCurve(calcBezPath(view2d, bowlprop), bowlprop.thick / 2);
@@ -17,45 +18,57 @@ export function calcRings(view2d, bowlprop) {
     }
 
     // Vertical profile
-    bowlprop.height = Math.max(Math.max.apply(null, pathy1), Math.max.apply(null, pathy2));
-    bowlprop.radius = Math.max(Math.max.apply(null, pathx1), Math.max.apply(null, pathx2));
+    const height = Math.max(Math.max.apply(null, pathy1), Math.max.apply(null, pathy2));
+    const radius = Math.max(Math.max.apply(null, pathx1), Math.max.apply(null, pathx2));
+    
+    // Work with a copy of rings to avoid mutation
+    const rings = [...bowlprop.rings];
+    
     let y = -bowlprop.thick / 2;
     let i = 0;
-    while (y < bowlprop.height) {
+    while (y < height) {
         const x = []; // x-values within this ring
         const yidx = []; // INDEX of y-values in this ring
-        if (bowlprop.rings.length <= i) { // Need a new ring
-            bowlprop.rings.push({ height: .75, segs: 12, clrs: defaultColors(), wood: defaultWood(), seglen: defaultLens(), xvals: [], theta: 0 });
+        if (rings.length <= i) { // Need a new ring
+            rings.push({ height: .75, segs: 12, clrs: defaultColors(), wood: defaultWood(), seglen: defaultLens(), xvals: [], theta: 0 });
         }
         for (let p = 0; p < pathx1.length; p++) {
-            if (pathy1[p] > y && pathy1[p] < y + bowlprop.rings[i].height) { 
+            if (pathy1[p] > y && pathy1[p] < y + rings[i].height) { 
                 x.push(pathx1[p]); yidx.push(p); 
             }
-            if (pathy2[p] > y && pathy2[p] < y + bowlprop.rings[i].height) { 
+            if (pathy2[p] > y && pathy2[p] < y + rings[i].height) { 
                 x.push(pathx2[p]); yidx.push(p); 
             }
-            if (p > 1 && pathy1[p - 1] < y && pathy1[p] > y + bowlprop.rings[i].height) {
+            if (p > 1 && pathy1[p - 1] < y && pathy1[p] > y + rings[i].height) {
                 // ring is too thin, curve points jump over it.. interpolate.
                 const m = (pathy1[p] - pathy1[p - 1]) / (pathx1[p] - pathx1[p - 1]);
                 x.push((y - pathy1[p - 1]) / m + pathx1[p - 1]);
                 yidx.push(p);
             }
-            if (p > 1 && pathy2[p - 1] < y && pathy2[p] > y + bowlprop.rings[i].height) {
+            if (p > 1 && pathy2[p - 1] < y && pathy2[p] > y + rings[i].height) {
                 const m = (pathy2[p] - pathy2[p - 1]) / (pathx2[p] - pathx2[p - 1]);
                 x.push((y - pathy2[p - 1]) / m + pathx2[p - 1]);
                 yidx.push(p);
             }
         }
-        bowlprop.rings[i].xvals = {
-            max: Math.max(0, Math.max.apply(null, x) + bowlprop.pad),
-            min: Math.max(0, Math.min.apply(null, x) - bowlprop.pad)
+        rings[i] = {
+            ...rings[i],
+            xvals: {
+                max: Math.max(0, Math.max.apply(null, x) + bowlprop.pad),
+                min: Math.max(0, Math.min.apply(null, x) - bowlprop.pad)
+            }
         };
-        y += bowlprop.rings[i].height;
+        y += rings[i].height;
         i += 1;
     }
-    bowlprop.usedrings = i;
+    
+    return { height, radius, usedrings: i, rings };
 }
 
+/**
+ * calcRingTrapz - Calculate trapezoid shapes for ring segments
+ * @returns {{ seltrapz: Array, selthetas: Array }} calculated trapezoids and theta angles
+ */
 export function calcRingTrapz(bowlprop, ringidx, rotate = true) {
     if (ringidx == null) { ringidx = 0; }
     let rotation = 0;
@@ -91,6 +104,6 @@ export function calcRingTrapz(bowlprop, ringidx, rotate = true) {
         rotation += theta * 2;
         trapzlist.push(trapz);
     }
-    bowlprop.seltrapz = trapzlist;
-    bowlprop.selthetas = thetas;
+    
+    return { seltrapz: trapzlist, selthetas: thetas };
 }

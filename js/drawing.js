@@ -35,7 +35,8 @@ export function drawCurve(ctx, bowlprop, view2d, style) {
 }
 
 export function drawSegProfile(ctx, bowlprop, view2d, ctrl, style) {
-    calcRings(view2d, bowlprop);
+    const ringResult = calcRings(view2d, bowlprop);
+    Object.assign(bowlprop, ringResult);
     let y = -bowlprop.thick / 2;
     for (let i = 0; i < bowlprop.rings.length; i++) {
         ctx.beginPath();
@@ -68,7 +69,8 @@ export function drawSegProfile(ctx, bowlprop, view2d, ctrl, style) {
 }
 
 export function drawRing(ctx, selring, bowlprop, view2d, ctrl, style) {
-    calcRingTrapz(bowlprop, selring, true);
+    const trapzResult = calcRingTrapz(bowlprop, selring, true);
+    Object.assign(bowlprop, trapzResult);
     for (let i = 0; i < bowlprop.rings[selring].segs; i++) {
         ctx.strokeStyle = "#000";
         ctx.lineWidth = 2;

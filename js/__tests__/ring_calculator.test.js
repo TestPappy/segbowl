@@ -36,23 +36,30 @@ var bowlprop = {
 
 describe('calcRings', () => {
     it('calculates something with rings', () => {
-        calcRings(view2d, bowlprop);
-        expect(bowlprop.height).toBe(3.125);
-        expect(bowlprop.radius).toBe(3.5);
-        expect(bowlprop.usedrings).toBe(6);
-        expect(bowlprop.rings.length).toBe(6);
-        expect(Number.parseFloat(bowlprop.rings[1].xvals.max).toFixed(3)).toBe("2.257");
-        expect(Number.parseFloat(bowlprop.rings[1].xvals.min).toFixed(3)).toBe("1.780");
-        expect(Number.parseFloat(bowlprop.rings[3].xvals.max).toFixed(3)).toBe("2.607");
-        expect(Number.parseFloat(bowlprop.rings[3].xvals.min).toFixed(3)).toBe("2.079");
-        expect(Number.parseFloat(bowlprop.rings[5].xvals.max).toFixed(3)).toBe("3.625");
-        expect(Number.parseFloat(bowlprop.rings[5].xvals.min).toFixed(3)).toBe("2.833");
+        const result = calcRings(view2d, bowlprop);
+        expect(result.height).toBe(3.125);
+        expect(result.radius).toBe(3.5);
+        expect(result.usedrings).toBe(6);
+        expect(result.rings.length).toBe(6);
+        expect(Number.parseFloat(result.rings[1].xvals.max).toFixed(3)).toBe("2.257");
+        expect(Number.parseFloat(result.rings[1].xvals.min).toFixed(3)).toBe("1.780");
+        expect(Number.parseFloat(result.rings[3].xvals.max).toFixed(3)).toBe("2.607");
+        expect(Number.parseFloat(result.rings[3].xvals.min).toFixed(3)).toBe("2.079");
+        expect(Number.parseFloat(result.rings[5].xvals.max).toFixed(3)).toBe("3.625");
+        expect(Number.parseFloat(result.rings[5].xvals.min).toFixed(3)).toBe("2.833");
     });
 });
 
 describe('calcRingTrapz', () => {
     it('calculates this', () => {
-        calcRingTrapz(bowlprop, 1, true);
-        console.log(bowlprop);
+        // First ensure rings are calculated
+        const ringResult = calcRings(view2d, bowlprop);
+        Object.assign(bowlprop, ringResult);
+        
+        const result = calcRingTrapz(bowlprop, 1, true);
+        expect(result.seltrapz).toBeDefined();
+        expect(result.selthetas).toBeDefined();
+        // calcRingTrapz iterates over seglen.length, not segs
+        expect(result.seltrapz.length).toBe(bowlprop.rings[1].seglen.length);
     });
 });

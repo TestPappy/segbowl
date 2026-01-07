@@ -122,7 +122,8 @@ function add_cutlist_row(table, bowlprop, no, step, ctrl) {
 export function getReportSegsList(bowlprop, ring) {
     const col_size_segs = [];
     const seginfo = [];
-    calcRingTrapz(bowlprop, ring, false);
+    const trapzResult = calcRingTrapz(bowlprop, ring, false);
+    Object.assign(bowlprop, trapzResult);
     for (let seg = 0; seg < bowlprop.rings[ring].segs; seg++) {
         const col = bowlprop.rings[ring].clrs[seg];
         const seglen = bowlprop.rings[ring].seglen[seg];

@@ -280,7 +280,8 @@ import * as PERSISTENCE from './persistence.mjs';
     function build3D() {
         if (el("canvas3d").style.display == 'none') { return; } // Don't calculate if not shown
         const curve = calcBezPath(view2d, bowlprop);
-        calcRings(view2d, bowlprop);
+        const ringResult = calcRings(view2d, bowlprop);
+        Object.assign(bowlprop, ringResult);
         const offcurve = offsetCurve(curve, bowlprop.thick / 2);
         for (let m = 0; m < view3d.mesh.length; m++) {
             view3d.mesh[m].geometry.dispose();
@@ -329,14 +330,14 @@ import * as PERSISTENCE from './persistence.mjs';
     /*======================
      Event handlers
     ======================*/
-    function showMenu() {
+    function showMenu(event) {
         const s = {
             btnOptions: "mnuOptions",
             btnView: "mnuView",
             btnBowl: "mnuBowl",
             btnRing: "mnuRing",
             btnSeg: "mnuSeg"
-        }[this.id];
+        }[event.target.id];
         const e = el(s);
         if (e.style.display == "none") { e.style.display = "inline"; }
         else { e.style.display = "none"; }
@@ -494,9 +495,9 @@ import * as PERSISTENCE from './persistence.mjs';
         build3D();
     }
 
-    function setSegHeight() {
+    function setSegHeight(event) {
         if (ctrl.selring != null) {
-            if (this.id == "segHup") {
+            if (event.target.id === "segHup") {
                 bowlprop.rings[ctrl.selring].height += ctrl.step;
             } else if (bowlprop.rings[ctrl.selring].height - ctrl.step > 0) {
                 bowlprop.rings[ctrl.selring].height -= ctrl.step;
@@ -507,8 +508,8 @@ import * as PERSISTENCE from './persistence.mjs';
         }
     }
 
-    function setSegCnt() {
-        if (this.id == "segNup") {
+    function setSegCnt(event) {
+        if (event.target.id === "segNup") {
             bowlprop.rings[ctrl.selring].segs += 1;
             if (bowlprop.rings[ctrl.selring].clrs.length < bowlprop.rings[ctrl.selring].segs) {
                 bowlprop.rings[ctrl.selring].clrs.push(bowlprop.rings[ctrl.selring].clrs[bowlprop.rings[ctrl.selring].clrs.length - 1]);
@@ -527,12 +528,12 @@ import * as PERSISTENCE from './persistence.mjs';
         build3D();
     }
 
-    function setSegL() {
-        if (this.id == "segLreset") {
+    function setSegL(event) {
+        if (event.target.id === "segLreset") {
             bowlprop.rings[ctrl.selring].seglen = defaultLens(bowlprop.rings[ctrl.selring].segs);
         } else if (ctrl.selseg.length != bowlprop.rings[ctrl.selring].segs) {
             let inc = .05; // 5%
-            if (this.id == "segLdn") { inc = -inc; }
+            if (event.target.id === "segLdn") { inc = -inc; }
             const dec = inc * ctrl.selseg.length / (bowlprop.rings[ctrl.selring].segs - ctrl.selseg.length);
             for (let i = 0; i < ctrl.selseg.length; i++) {
                 // Selected rings go up by inc
@@ -548,9 +549,9 @@ import * as PERSISTENCE from './persistence.mjs';
         build3D();
     }
 
-    function rotateRing() {
+    function rotateRing(event) {
         if (ctrl.selring != null) {
-            bowlprop.rings[ctrl.selring].theta = Math.PI / 180 * this.value;
+            bowlprop.rings[ctrl.selring].theta = Math.PI / 180 * event.target.value;
             drawCanvas();
             build3D();
         }
@@ -591,8 +592,8 @@ import * as PERSISTENCE from './persistence.mjs';
         }
     }
 
-    function colorChange() {
-        const clr = this.style.backgroundColor;
+    function colorChange(event) {
+        const clr = event.target.style.backgroundColor;
         for (let i = 0; i < ctrl.selseg.length; i++) {
             bowlprop.rings[ctrl.selring].clrs[ctrl.selseg[i]] = clr;
             bowlprop.rings[ctrl.selring].wood[ctrl.selseg[i]] = getWoodByColor(clr);
@@ -609,13 +610,13 @@ import * as PERSISTENCE from './persistence.mjs';
         el("segHtxt").innerHTML = reduce(bowlprop.rings[ctrl.selring].height);
     }
 
-    function setView() {
+    function setView(event) {
         let canv, ctrls;
-        if (this.id == "viewProf") {
+        if (event.target.id === "viewProf") {
             canv = el("canvas");
             ctrls = el("segHctrl");
         }
-        else if (this.id == "viewRing") {
+        else if (event.target.id === "viewRing") {
             canv = el("canvas2");
             ctrls = el("segNctrl");
         } else {
@@ -623,7 +624,7 @@ import * as PERSISTENCE from './persistence.mjs';
             ctrls = '';
         }
 
-        if (this.checked) {
+        if (event.target.checked) {
             canv.style.display = "inline";
             if (ctrls != null && ctrls != '') { ctrls.style.visibility = "visible"; }
         } else {
@@ -694,7 +695,7 @@ import * as PERSISTENCE from './persistence.mjs';
         loadSawKerf();
     }
 
-    function zoom() {
+    function zoom(event) {
         let inc, mult, unit;
         if (ctrl.inch) {
             inc = 1;
@@ -705,8 +706,8 @@ import * as PERSISTENCE from './persistence.mjs';
             mult = 2.54;
             unit = ' cm';
         }
-        if (this.id == "zoomIn") { inc = -inc; }
-        if (this.id == "zoomIn" && view2d.canvasinches <= 2) { return; }
+        if (event.target.id === "zoomIn") { inc = -inc; }
+        if (event.target.id === "zoomIn" && view2d.canvasinches <= 2) { return; }
         const oldcp = screenToReal(view2d, bowlprop);
 
         view2d.canvasinches += inc;
@@ -816,9 +817,9 @@ import * as PERSISTENCE from './persistence.mjs';
         ];
 
         el("colortype").onchange =
-            function () {
+            function (event) {
                 let clist;
-                if (this.value == "wood") {
+                if (event.target.value === "wood") {
                     clist = woodcolors;
                 } else {
                     clist = brightcolors;

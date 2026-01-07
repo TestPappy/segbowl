@@ -1,6 +1,6 @@
-import { calcRingTrapz } from "./ring_calculator.mjs";
+import { calcRingTrapz } from "./ring_calculator.js";
 import { clearCanvas, drawCurve, drawRing, drawSegProfile } from "./drawing.js";
-import { capitalize, reduce } from "./common.mjs";
+import { capitalize, reduce } from "./common.js";
 
 export function createReport(nwindow, bowlprop, step, ctrl, view2d, view3d, style) {
     
@@ -147,3 +147,4 @@ export function getReportSegsList(bowlprop, ring) {
     }
     return seginfo;
 }
+

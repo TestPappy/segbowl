@@ -42,3 +42,4 @@ export function clearDesignAndSettings() {
     localStorage.removeItem("bowlDesign");
     localStorage.removeItem("bowlSettings");
 }
+

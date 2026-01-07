@@ -5,12 +5,12 @@
 */
 import * as THREE from 'three';
 import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
-import { defaultColors, defaultWood, defaultLens, capitalize, reduce as reduceValue } from './common.mjs';
-import { screenToRealPoint, realToScreen, screenToReal, calcBezPath, splitRingY, offsetCurve } from './bowl_calculator.mjs';
-import { calcRings } from './ring_calculator.mjs';
-import { createReport, getReportSegsList } from './report.mjs';
+import { defaultColors, defaultWood, defaultLens, capitalize, reduce as reduceValue } from './common.js';
+import { screenToRealPoint, realToScreen, screenToReal, calcBezPath, splitRingY, offsetCurve } from './bowl_calculator.js';
+import { calcRings } from './ring_calculator.js';
+import { createReport, getReportSegsList } from './report.js';
 import { clearCanvas, drawCurve, drawRing, drawSegProfile } from './drawing.js';
-import * as PERSISTENCE from './persistence.mjs';
+import * as PERSISTENCE from './persistence.js';
 
 (() => {
     const version = "0.2";

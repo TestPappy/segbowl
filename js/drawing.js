@@ -1,5 +1,5 @@
-import { calcRings, calcRingTrapz } from "./ring_calculator.mjs";
-import { realToScreen } from "./bowl_calculator.mjs";
+import { calcRings, calcRingTrapz } from "./ring_calculator.js";
+import { realToScreen } from "./bowl_calculator.js";
 
 export function clearCanvas(canvas, ctx, height) {
     const grd = ctx.createLinearGradient(0, height, 0, 0);

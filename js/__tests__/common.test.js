@@ -1,4 +1,4 @@
-import { capitalize, defaultColors, defaultLens, defaultWood } from '../common.mjs';
+import { capitalize, defaultColors, defaultLens, defaultWood } from '../common.js';
 
 test('set default colors to be 12x #E2CAA0', () => {
     const isSameColor = (element) => element == "#E2CAA0";

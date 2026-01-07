@@ -1,6 +1,6 @@
 import { Vector2 } from "three";
-import { defaultColors, defaultLens } from "../common.mjs";
-import { calcRings, calcRingTrapz } from "../ring_calculator.mjs";
+import { defaultColors, defaultLens } from "../common.js";
+import { calcRings, calcRingTrapz } from "../ring_calculator.js";
 
 var canvasinches = 8;
 var width = 500;

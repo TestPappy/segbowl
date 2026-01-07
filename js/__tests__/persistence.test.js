@@ -1,4 +1,4 @@
-import { loadDesign, loadSettings, checkStorage, clearDesignAndSettings, saveDesignAndSettings } from "../persistence.mjs";
+import { loadDesign, loadSettings, checkStorage, clearDesignAndSettings, saveDesignAndSettings } from "../persistence.js";
 require('jest-localstorage-mock');
 
 describe('persistence can', () => {

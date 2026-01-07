@@ -39,3 +39,4 @@ export function reduce(value, step = null, ctrl) {
     }
     return (numerator / gcd).toString().concat('&frasl;').concat((denominator / gcd).toString().concat('"'));
 }
+

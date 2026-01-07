@@ -1,6 +1,6 @@
 import { Vector2 } from "three";
-import { screenToRealPoint, realToScreen, screenToReal, splitRingY, calcBezPath, offsetCurve } from "../bowl_calculator.mjs";
-import { defaultColors, defaultLens } from "../common.mjs";
+import { screenToRealPoint, realToScreen, screenToReal, splitRingY, calcBezPath, offsetCurve } from "../bowl_calculator.js";
+import { defaultColors, defaultLens } from "../common.js";
 var canvasinches = 8;
 var width = 500;
 var height = 500;

@@ -1,5 +1,5 @@
-import { offsetCurve, calcBezPath } from "./bowl_calculator.mjs";
-import { defaultColors, defaultWood, defaultLens } from "./common.mjs";
+import { offsetCurve, calcBezPath } from "./bowl_calculator.js";
+import { defaultColors, defaultWood, defaultLens } from "./common.js";
 
 /**
  * calcRings - Calculate ring dimensions based on bowl curve
@@ -107,3 +107,4 @@ export function calcRingTrapz(bowlprop, ringidx, rotate = true) {
     
     return { seltrapz: trapzlist, selthetas: thetas };
 }
+

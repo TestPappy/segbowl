@@ -2,17 +2,7 @@
 
 Verbleibende Verbesserungsvorschläge:
 
-**1. Gemischte Dateiendungen `.js` / `.mjs`**
-
-Status: `package.json` enthält `"type": "module"` – damit funktionieren beide Endungen.
-
-Aktuelle Situation:
-- `.js`: `bowl.js`, `drawing.js`
-- `.mjs`: `bowl_calculator.mjs`, `common.mjs`, `persistence.mjs`, `report.mjs`, `ring_calculator.mjs`
-
-Empfehlung: Für Konsistenz alle auf `.js` oder `.mjs` vereinheitlichen. Keine funktionale Notwendigkeit, nur Code-Hygiene.
-
-**2. Fehlende Typdefinitionen**
+**1. Fehlende Typdefinitionen**
 
 Warum: Komplexe Objekte (`bowlprop`, `view2d`, `ctrl`, `style`) werden überall durchgereicht ohne Dokumentation. Fehleranfällig und schlecht wartbar.
 
@@ -38,10 +28,11 @@ export function calcRings(view2d, bowlprop) { ... }
 - ✅ `var` → `const`/`let` Modernisierung
 - ✅ DOM-Zugriffe cachen mit `el()` Helper
 - ✅ Material-Cache für THREE.js
-- ✅ Kürzere Array-Erzeugung in `common.mjs`
+- ✅ Kürzere Array-Erzeugung in `common.js`
 - ✅ Robusteres Persistence-Handling
 - ✅ `reduce()` Funktion zusammengeführt
 - ✅ Undefinierte Variablen `t` und `idx` korrigiert (jetzt `const`)
 - ✅ Implizite globale `canvas` Variable korrigiert (jetzt `ctx.canvas`)
 - ✅ Side-Effects in `calcRings()` und `calcRingTrapz()` entfernt – geben jetzt Werte zurück
 - ✅ Fragile `this`-Bindung durch `event.target` ersetzt in allen Event-Handlern
+- ✅ Dateiendungen vereinheitlicht – alle Module jetzt `.js` statt gemischt `.js`/`.mjs`

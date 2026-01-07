@@ -122,3 +122,4 @@ export function offsetCurve(curve, offset) {
     outerwall.push(innerwall[innerwall.length - 1]); // Close the gap
     return { c1: innerwall, c2: outerwall }; // c1 is inner wall, c2 outer wall
 }
+

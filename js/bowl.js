@@ -74,6 +74,17 @@ import * as PERSISTENCE from './persistence.mjs';
     // DOM helper - cache getElementById calls
     const el = id => document.getElementById(id);
 
+    // Material cache for THREE.js - reuse materials with same color
+    const materialCache = new Map();
+    function getMaterial(color) {
+        if (!materialCache.has(color)) {
+            const mat = new THREE.MeshPhongMaterial({ color });
+            mat.side = THREE.DoubleSide;
+            materialCache.set(color, mat);
+        }
+        return materialCache.get(color);
+    }
+
     /*======================
      Initialize
     ======================*/
@@ -279,7 +290,7 @@ import * as PERSISTENCE from './persistence.mjs';
         const offcurve = offsetCurve(curve, bowlprop.thick / 2);
         for (let m = 0; m < view3d.mesh.length; m++) {
             view3d.mesh[m].geometry.dispose();
-            view3d.mesh[m].material.dispose();
+            // Materials are cached and reused - don't dispose
             view3d.scene.remove(view3d.mesh[m]);
         }
         view3d.mesh = [];
@@ -290,8 +301,7 @@ import * as PERSISTENCE from './persistence.mjs';
                 let tottheta = bowlprop.rings[i].theta;
                 for (let seg = 0; seg < bowlprop.rings[i].segs; seg++) {
                     const theta = (2 * Math.PI / bowlprop.rings[i].segs) * bowlprop.rings[i].seglen[seg];
-                    const material = new THREE.MeshPhongMaterial({ color: bowlprop.rings[i].clrs[seg] });
-                    material.side = THREE.DoubleSide;
+                    const material = getMaterial(bowlprop.rings[i].clrs[seg]);
                     view3d.mesh.push(new THREE.Mesh(
                         new THREE.LatheGeometry(
                             curvesegs[i], 10, tottheta, theta), material));
@@ -306,8 +316,7 @@ import * as PERSISTENCE from './persistence.mjs';
                 let tottheta = bowlprop.rings[i].theta;
                 for (let seg = 0; seg < bowlprop.rings[i].segs; seg++) {
                     const theta = (2 * Math.PI / bowlprop.rings[i].segs) * bowlprop.rings[i].seglen[seg];
-                    const material = new THREE.MeshPhongMaterial({ color: bowlprop.rings[i].clrs[seg] });
-                    material.side = THREE.DoubleSide;
+                    const material = getMaterial(bowlprop.rings[i].clrs[seg]);
                     view3d.mesh.push(new THREE.Mesh(
                         new THREE.LatheGeometry(
                             curvesegs[i], 10, tottheta, theta), material));

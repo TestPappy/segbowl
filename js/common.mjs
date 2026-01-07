@@ -1,22 +1,14 @@
 
 export function defaultColors() {
-    const clrs = [];
-    for (let i = 0; i < 12; i++) { clrs.push("#E2CAA0"); }
-    return clrs;
+    return Array(12).fill('#E2CAA0');
 }
 
 export function defaultWood() {
-    const wood = [];
-    for (let i = 0; i < 12; i++) { wood.push("maple"); }
-    return wood;
+    return Array(12).fill('maple');
 }
 
 export function defaultLens(cnt = 12) {
-    const len = [];
-    for (let i = 0; i < cnt; i++) {
-        len.push(1);
-    }
-    return len;
+    return Array(cnt).fill(1);
 }
 
 export function capitalize(str) {

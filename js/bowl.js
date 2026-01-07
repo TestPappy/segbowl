@@ -216,11 +216,11 @@ import * as PERSISTENCE from './persistence.js';
         ctx.stroke();
     }
 
-    function getMaxDiameter() {
-        const diameters = bowlprop.rings
-            .map(r => (r.xvals && typeof r.xvals.max === 'number') ? r.xvals.max * 2 : 0);
-        const maxDiameter = Math.max(...diameters, 0);
-        return reduce(maxDiameter / 2);
+    function getMaxRadius() {
+        const radii = bowlprop.rings
+            .map(r => (r.xvals && typeof r.xvals.max === 'number') ? r.xvals.max : 0);
+        const maxRadius = Math.max(...radii, 0);
+        return reduce(maxRadius);
     }
 
     function drawControlPoints(ctx) {
@@ -270,7 +270,7 @@ import * as PERSISTENCE from './persistence.js';
         drawControlLines(view2d.ctx);
         drawCurve(view2d.ctx, bowlprop, view2d, style);
         drawControlPoints(view2d.ctx);
-        drawScale(view2d.ctx, getMaxDiameter());
+        drawScale(view2d.ctx, getMaxRadius());
         if (el("canvas2").style.display != "none" && ctrl.selring != null) {
             drawRing(view2d.ctx2, ctrl.selring, bowlprop, view2d, ctrl, style);
         }

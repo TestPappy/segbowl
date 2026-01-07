@@ -99,3 +99,108 @@ export function loadDesign() {
 }
 ```
 
+**6. Duplizierte `reduce()`-Funktion zusammenführen**
+
+Warum: Die Funktion existiert sowohl in `js/bowl.js` (Zeile 463) als auch in `js/report.mjs` (Zeile 121) mit nahezu identischer Logik. DRY-Prinzip verletzt.
+
+Lösung: In `common.mjs` extrahieren und an beiden Stellen importieren:
+
+```js
+// common.mjs
+export function reduce(value, step, ctrl) {
+  if (!ctrl.inch) return (value * 25.4).toFixed(1).concat(' mm');
+  if (isNaN(step) || step === 'decimal') return value.toFixed(1).concat('"');
+  // ... restliche Logik
+}
+```
+
+**7. Undefinierte Variablen in `bowl.js`**
+
+Warum: `t` und `idx` (Zeilen 454-455) werden ohne `var`/`let`/`const` verwendet → implizite globale Variablen.
+
+```js
+// Fehlerhaft:
+t = imin / path.length - path.length / bowlprop.curvesegs;
+idx = 2 + 3 * Math.floor(imin / bowlprop.curvesegs);
+
+// Korrigiert:
+const t = imin / path.length - path.length / bowlprop.curvesegs;
+const idx = 2 + 3 * Math.floor(imin / bowlprop.curvesegs);
+```
+
+**8. Implizite globale `canvas`-Variable in `drawing.js`**
+
+Warum: Zeilen 30-32 referenzieren `canvas.width` statt `ctx.canvas.width` oder `view2d.canvas.width` – funktioniert nur zufällig durch globale Variable.
+
+```js
+// Fehlerhaft (Zeile 30-32):
+canvas.width - bowlprop.cpoint[i + 1].x, ...
+
+// Korrigiert:
+ctx.canvas.width - bowlprop.cpoint[i + 1].x, ...
+```
+
+**9. Side-Effects in Berechnungsfunktionen vermeiden**
+
+Warum: `calcRings()` mutiert `bowlprop.rings`, `bowlprop.height`, `bowlprop.radius` direkt. `calcRingTrapz()` mutiert `bowlprop.seltrapz`. Erschwert Testbarkeit und Nachvollziehbarkeit.
+
+Ansatz: Rückgabewerte statt Mutation:
+
+```js
+// Statt:
+export function calcRings(view2d, bowlprop) {
+  bowlprop.height = ...;  // Mutation
+}
+
+// Besser:
+export function calcRings(view2d, bowlprop) {
+  const height = ...;
+  const radius = ...;
+  return { height, radius, rings: [...] };
+}
+```
+
+**10. Fragile `this`-Bindung in Event-Handlern**
+
+Warum: Funktionen wie `setSegHeight`, `setSegCnt`, `rotateRing` nutzen `this.id`/`this.value`. Bei Refactoring oder anderer Aufrufart bricht der Code.
+
+```js
+// Fragil:
+function setSegHeight() {
+  if (this.id == "segHup") { ... }
+}
+el("segHup").onclick = setSegHeight;
+
+// Robuster:
+function setSegHeight(event) {
+  if (event.target.id === "segHup") { ... }
+}
+el("segHup").onclick = setSegHeight;
+```
+
+**11. Gemischte Dateiendungen `.js` / `.mjs`**
+
+Warum: Inkonsistent – `drawing.js` vs. `common.mjs`. Kann Verwirrung und Build-Probleme verursachen.
+
+Lösung: Auf `.mjs` standardisieren oder in `package.json` `"type": "module"` setzen und durchgehend `.js` verwenden.
+
+**12. Fehlende Typdefinitionen**
+
+Warum: Komplexe Objekte (`bowlprop`, `view2d`, `ctrl`, `style`) werden überall durchgereicht ohne Dokumentation. Fehleranfällig und schlecht wartbar.
+
+Lösung: JSDoc-Typen hinzufügen:
+
+```js
+/**
+ * @typedef {Object} BowlProp
+ * @property {number} radius
+ * @property {number} height
+ * @property {number} thick
+ * @property {Array<{x: number, y: number}>} cpoint
+ * @property {Array<Ring>} rings
+ */
+
+/** @param {BowlProp} bowlprop */
+export function calcRings(view2d, bowlprop) { ... }
+```
+

@@ -2,6 +2,34 @@ import { calcRingTrapz } from "./ring_calculator.js";
 import { clearCanvas, drawCurve, drawRing, drawSegProfile } from "./drawing.js";
 import { capitalize, reduce } from "./common.js";
 
+/** @typedef {import('./types.js').BowlProp} BowlProp */
+/** @typedef {import('./types.js').Ctrl} Ctrl */
+/** @typedef {import('./types.js').View2D} View2D */
+/** @typedef {import('./types.js').View3D} View3D */
+/** @typedef {import('./types.js').Style} Style */
+
+/**
+ * @typedef {Object} SegInfo
+ * @property {number} theta - Cut angle in degrees
+ * @property {number} outlen - Outside length
+ * @property {number} inlen - Inside length
+ * @property {number} width - Segment width
+ * @property {number} length - Strip length
+ * @property {string} color - Segment color
+ * @property {string} wood - Wood type name
+ * @property {number} cnt - Count of identical segments
+ */
+
+/**
+ * Create and populate the cut list report
+ * @param {Window} nwindow - The report window
+ * @param {BowlProp} bowlprop - The bowl properties
+ * @param {number} step - Step size for measurement formatting
+ * @param {Ctrl} ctrl - Control state
+ * @param {View2D} view2d - The 2D view configuration
+ * @param {View3D} view3d - The 3D view configuration
+ * @param {Style} style - Drawing style configuration
+ */
 export function createReport(nwindow, bowlprop, step, ctrl, view2d, view3d, style) {
     
     setTimeout(() => { 
@@ -119,6 +147,12 @@ function add_cutlist_row(table, bowlprop, no, step, ctrl) {
 }
 
 
+/**
+ * Get list of segment info grouped by color and size
+ * @param {BowlProp} bowlprop - The bowl properties
+ * @param {number} ring - Ring index
+ * @returns {SegInfo[]} Array of segment information objects
+ */
 export function getReportSegsList(bowlprop, ring) {
     const col_size_segs = [];
     const seginfo = [];

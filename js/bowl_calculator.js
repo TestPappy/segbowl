@@ -1,12 +1,15 @@
 import * as THREE from 'three';
 
+/** @typedef {import('./types.js').View2D} View2D */
+/** @typedef {import('./types.js').BowlProp} BowlProp */
+/** @typedef {import('./types.js').Point} Point */
+
 /**
- * screenToRealPoint
- * @param {view2d} view2d 
- * @param {int} x of mouse click in canvas
- * @param {int} y of mouse click in canvas
- * @returns x and y of real position in bowl cross section. y is - half an inch, 
- * because bowl is located half an inch above bottom of canvas.
+ * Convert screen coordinates to real-world coordinates
+ * @param {View2D} view2d - The 2D view configuration
+ * @param {number} x - X position of mouse click in canvas
+ * @param {number} y - Y position of mouse click in canvas
+ * @returns {Point} Real position in bowl cross section (y offset by -0.5 inch)
  */
 export function screenToRealPoint(view2d, x, y) {
     // console.log("x: " + x + "; y: " + y);
@@ -17,12 +20,12 @@ export function screenToRealPoint(view2d, x, y) {
 }
 
 /**
- * realToScreen
- * @param {view2d} view2d 
- * @param {double} x 
- * @param {double} y 
- * @param {double} ofst offset
- * @returns the canvas coordinates of a real point
+ * Convert real-world coordinates to screen coordinates
+ * @param {View2D} view2d - The 2D view configuration
+ * @param {number} x - Real X coordinate
+ * @param {number} y - Real Y coordinate
+ * @param {number} [ofst=-0.5] - Y offset for positioning
+ * @returns {Point} Canvas coordinates
  */
 export function realToScreen(view2d, x, y, ofst = -.5) {
     return {
@@ -32,10 +35,10 @@ export function realToScreen(view2d, x, y, ofst = -.5) {
 }
 
 /**
- * screenToReal
- * @param {view2d} view2d 
- * @param {bowlprop} bowlprop 
- * @returns 
+ * Convert all control points from screen to real-world coordinates
+ * @param {View2D} view2d - The 2D view configuration
+ * @param {BowlProp} bowlprop - The bowl properties
+ * @returns {THREE.Vector2[]} Array of real-world coordinate vectors
  */
 export function screenToReal(view2d, bowlprop) {
     const npoint = [];
@@ -47,6 +50,13 @@ export function screenToReal(view2d, bowlprop) {
     return npoint;
 }
 
+/**
+ * Calculate bezier curve path points
+ * @param {View2D} view2d - The 2D view configuration
+ * @param {BowlProp} bowlprop - The bowl properties
+ * @param {boolean} [real=true] - Whether to convert to real coordinates
+ * @returns {THREE.Vector2[]} Array of points along the bezier curve
+ */
 export function calcBezPath(view2d, bowlprop, real = true) {
     const rpoint = real ? screenToReal(view2d, bowlprop) : bowlprop.cpoint;
     const points = [new THREE.Vector2(0, 0), new THREE.Vector2(.1, 0)];
@@ -62,6 +72,12 @@ export function calcBezPath(view2d, bowlprop, real = true) {
     return points;
 }
 
+/**
+ * Split curve into segments by ring Y boundaries
+ * @param {Array<{x: number, y: number}>} curve - The curve points
+ * @param {BowlProp} bowlprop - The bowl properties
+ * @returns {Array<Array<{x: number, y: number}>>} Array of curve segments per ring
+ */
 export function splitRingY(curve, bowlprop) {
     let y_from = 0;
     const curveparts = [];
@@ -100,6 +116,12 @@ export function splitRingY(curve, bowlprop) {
     return curveparts;
 }
 
+/**
+ * Create offset curves for inner and outer walls
+ * @param {THREE.Vector2[]} curve - The original curve points
+ * @param {number} offset - Offset distance (half wall thickness)
+ * @returns {{c1: THREE.Vector2[], c2: THREE.Vector2[]}} Inner (c1) and outer (c2) wall curves
+ */
 export function offsetCurve(curve, offset) {
     // Numerical approximation by shifting line segments
     // Returns two curves, one with + offset one with - offset

@@ -1,9 +1,16 @@
 import { offsetCurve, calcBezPath } from "./bowl_calculator.js";
 import { defaultColors, defaultWood, defaultLens } from "./common.js";
 
+/** @typedef {import('./types.js').View2D} View2D */
+/** @typedef {import('./types.js').BowlProp} BowlProp */
+/** @typedef {import('./types.js').CalcRingsResult} CalcRingsResult */
+/** @typedef {import('./types.js').CalcRingTrapzResult} CalcRingTrapzResult */
+
 /**
- * calcRings - Calculate ring dimensions based on bowl curve
- * @returns {{ height: number, radius: number, usedrings: number, rings: Array }} calculated values
+ * Calculate ring dimensions based on bowl curve
+ * @param {View2D} view2d - The 2D view configuration
+ * @param {BowlProp} bowlprop - The bowl properties
+ * @returns {CalcRingsResult} Calculated height, radius, usedrings, and rings array
  */
 export function calcRings(view2d, bowlprop) {
     const paths = offsetCurve(calcBezPath(view2d, bowlprop), bowlprop.thick / 2);
@@ -66,8 +73,11 @@ export function calcRings(view2d, bowlprop) {
 }
 
 /**
- * calcRingTrapz - Calculate trapezoid shapes for ring segments
- * @returns {{ seltrapz: Array, selthetas: Array }} calculated trapezoids and theta angles
+ * Calculate trapezoid shapes for ring segments
+ * @param {BowlProp} bowlprop - The bowl properties
+ * @param {number|null} ringidx - Index of the ring to calculate
+ * @param {boolean} [rotate=true] - Whether to apply rotation
+ * @returns {CalcRingTrapzResult} Trapezoid points and theta angles
  */
 export function calcRingTrapz(bowlprop, ringidx, rotate = true) {
     if (ringidx == null) { ringidx = 0; }

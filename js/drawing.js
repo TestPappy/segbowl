@@ -1,6 +1,17 @@
 import { calcRings, calcRingTrapz } from "./ring_calculator.js";
 import { realToScreen } from "./bowl_calculator.js";
 
+/** @typedef {import('./types.js').View2D} View2D */
+/** @typedef {import('./types.js').BowlProp} BowlProp */
+/** @typedef {import('./types.js').Ctrl} Ctrl */
+/** @typedef {import('./types.js').Style} Style */
+
+/**
+ * Clear and fill canvas with gradient background
+ * @param {HTMLCanvasElement} canvas - The canvas element
+ * @param {CanvasRenderingContext2D} ctx - The canvas context
+ * @param {number} height - Canvas height
+ */
 export function clearCanvas(canvas, ctx, height) {
     const grd = ctx.createLinearGradient(0, height, 0, 0);
     grd.addColorStop(0, "lightblue");
@@ -9,6 +20,13 @@ export function clearCanvas(canvas, ctx, height) {
     ctx.fillRect(0, 0, canvas.width, canvas.height);
 }
 
+/**
+ * Draw the bowl curve on canvas
+ * @param {CanvasRenderingContext2D} ctx - The canvas context
+ * @param {BowlProp} bowlprop - The bowl properties
+ * @param {View2D} view2d - The 2D view configuration
+ * @param {Style} style - Drawing style configuration
+ */
 export function drawCurve(ctx, bowlprop, view2d, style) {
     ctx.lineWidth = bowlprop.thick * view2d.scale;
     ctx.strokeStyle = style.curve.color;
@@ -34,6 +52,14 @@ export function drawCurve(ctx, bowlprop, view2d, style) {
     ctx.stroke();
 }
 
+/**
+ * Draw segment profile view showing all rings
+ * @param {CanvasRenderingContext2D} ctx - The canvas context
+ * @param {BowlProp} bowlprop - The bowl properties
+ * @param {View2D} view2d - The 2D view configuration
+ * @param {Ctrl} ctrl - Control state
+ * @param {Style} style - Drawing style configuration
+ */
 export function drawSegProfile(ctx, bowlprop, view2d, ctrl, style) {
     const ringResult = calcRings(view2d, bowlprop);
     Object.assign(bowlprop, ringResult);
@@ -68,6 +94,15 @@ export function drawSegProfile(ctx, bowlprop, view2d, ctrl, style) {
     }
 }
 
+/**
+ * Draw a single ring with its segments
+ * @param {CanvasRenderingContext2D} ctx - The canvas context
+ * @param {number} selring - Index of the ring to draw
+ * @param {BowlProp} bowlprop - The bowl properties
+ * @param {View2D} view2d - The 2D view configuration
+ * @param {Ctrl} ctrl - Control state
+ * @param {Style} style - Drawing style configuration
+ */
 export function drawRing(ctx, selring, bowlprop, view2d, ctrl, style) {
     const trapzResult = calcRingTrapz(bowlprop, selring, true);
     Object.assign(bowlprop, trapzResult);

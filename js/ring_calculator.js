@@ -37,7 +37,7 @@ export function calcRings(view2d, bowlprop) {
         const x = []; // x-values within this ring
         const yidx = []; // INDEX of y-values in this ring
         if (rings.length <= i) { // Need a new ring
-            rings.push({ height: .75, segs: 12, clrs: defaultColors(), wood: defaultWood(), seglen: defaultLens(), xvals: [], theta: 0 });
+            rings.push({ height: 19, segs: 12, clrs: defaultColors(), wood: defaultWood(), seglen: defaultLens(), xvals: [], theta: 0 });  // height in mm (was 0.75 inch)
         }
         for (let p = 0; p < pathx1.length; p++) {
             if (pathy1[p] > y && pathy1[p] < y + rings[i].height) { 

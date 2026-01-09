@@ -35,22 +35,28 @@ export function capitalize(str) {
 }
 
 /**
- * Format a measurement value for display (inches with fractions or mm)
- * @param {number} value - The value to format (in inches)
- * @param {number|null} [step=null] - Step size for fraction reduction
+ * Format a measurement value for display (mm or inches with fractions)
+ * @param {number} value - The value to format (in mm - internal unit)
+ * @param {number|null} [step=null] - Step size for fraction reduction (in inches when displaying inches)
  * @param {Ctrl} ctrl - Control state (for unit preference)
  * @returns {string} Formatted measurement string
  */
 export function reduce(value, step = null, ctrl) {
+    // Default: display in mm (internal unit)
     if (ctrl.inch == false) {
-        return (value * 25.4).toFixed(1).concat(' mm');
-    } else if (isNaN(step) || step == "decimal") {
-        return value.toFixed(1).concat('"');
+        return value.toFixed(1).concat(' mm');
+    }
+    
+    // Convert mm to inches for display
+    const inchValue = value / 25.4;
+    
+    if (isNaN(step) || step == "decimal") {
+        return inchValue.toFixed(2).concat('"');
     }
     if (step == null) { step = ctrl.step; }
 
-    if (value == 0) { return '0"'; }
-    let numerator = Math.round(value / step);
+    if (inchValue == 0) { return '0"'; }
+    let numerator = Math.round(inchValue / step);
     const denominator = 1 / step;
     if (numerator == denominator) { return '1"'; }
     const gcdFn = function gcdFn(a, b) {
@@ -61,8 +67,7 @@ export function reduce(value, step = null, ctrl) {
     if (numerator > denominator) { //Mixed fraction
         const whole = Math.floor(numerator / denominator);
         numerator = numerator % denominator;
-        return whole.toString().concat(' ').concat(numerator / gcd).toString().concat('&frasl;').concat((denominator / gcd).toString().concat('"'));
+        return whole.toString().concat(' ').concat(numerator / gcd).toString().concat('⁄').concat((denominator / gcd).toString().concat('"'));
     }
-    return (numerator / gcd).toString().concat('&frasl;').concat((denominator / gcd).toString().concat('"'));
+    return (numerator / gcd).toString().concat('⁄').concat((denominator / gcd).toString().concat('"'));
 }
-

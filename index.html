@@ -3,7 +3,7 @@
 
 <link rel="stylesheet" type="text/css" href="style.css">
 
-<body onload="document.getElementById('mm').click()">
+<body>
 
 <div>
     <h2 id="top">Segmented Turning Designer 2.1</h2>
@@ -15,7 +15,7 @@
             <p>Zoom
                 <button id="zoomIn" class="hbutton">+</button>
                 <button id="zoomOut" class="hbutton">-</button>
-                <span id="zoomTxt">View: 8"</span></p>
+                <span id="zoomTxt">View: 20 cm</span></p>
         </div>
         <p><input type="checkbox" id="showsegs" checked><label for="showsegs"><span></span>Show Segments</label>
         <p><input type="checkbox" id="showsegnum"><label for="showsegnum"><span></span>Show Segment Numbers</label>
@@ -26,20 +26,23 @@
     <button id="btnBowl" class="mnubtn">Bowl</button>
     <div id="mnuBowl" style="display:none">
         <p>Wall thickness
-            <input type="range" id="inptThick" min="0" max="1" value=".25" step=".0625" style="width: 60%">
-            <span id="valThick">1/4"</span></p>
+            <input type="range" id="inptThick" min="0" max="25" value="6" step="0.5" style="width: 60%">
+            <span id="valThick">6.0 mm</span></p>
         <p>Ring tolerance
-            <input type="range" id="inptPad" min="0" max=".5" value=".125" step=".0625" style="width: 60%">
-            <span id="valPad">1/8"</span></p>
+            <input type="range" id="inptPad" min="0" max="12" value="3" step="0.5" style="width: 60%">
+            <span id="valPad">3.0 mm</span></p>
         <hr>
     </div>
 
     <button id="btnRing" class="mnubtn">Ring</button>
     <div id="mnuRing" style="display:none">
-        <p>Height: <span id="segHtxt">3/4"</span>
-            <span class="updnbtn"><button id="segHup" class="hbutton">+</button>
-		<button id="segHdn" class="hbutton">-</button>
-		</span>
+        <p>Height: <span id="segHtxt">19.0 mm</span>
+            <span class="updnbtn">
+                <button id="segHupCoarse" class="hbutton">++</button>
+                <button id="segHupFine" class="hbutton">+</button>
+                <button id="segHdnFine" class="hbutton">-</button>
+                <button id="segHdnCoarse" class="hbutton">--</button>
+            </span>
         <p><span id="segNtxt">Segments: 12</span>
             <span class="updnbtn"><button id="segNup" class="hbutton">+</button>
 		<button id="segNdn" class="hbutton">-</button>
@@ -92,8 +95,8 @@
         <p><input type="checkbox" id="redrawdrag" checked><label for="redrawdrag"><span></span>Redraw while
             dragging</label>
         <p>Units:
-            <input type="radio" name="unit" id="inch" value="inch" checked><label for="inch"><span></span>Inch</label>
-            <input type="radio" name="unit" id="mm" value="mm"><label for="mm"><span></span>mm</label></p>
+            <input type="radio" name="unit" id="inch" value="inch"><label for="inch"><span></span>Inch</label>
+            <input type="radio" name="unit" id="mm" value="mm" checked><label for="mm"><span></span>mm</label></p>
         <span id="rptprec" style="visibility:hidden">
             <p>Precision:</p>
             <div class="styled-select">
@@ -106,7 +109,7 @@
             </div>
         </span>
         <p>Saw Kerf:
-            <input type="text" id="sawkerf" value="" maxlength="5">
+            <input type="text" id="sawkerf" value="3" maxlength="5">
         </p>
 		<p><button id="about" class="hbutton">Help/About</button></p>
 		<hr>

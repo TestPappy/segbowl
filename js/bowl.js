@@ -18,11 +18,11 @@ import * as PERSISTENCE from './persistence.js';
     let bowlprop = {
         radius: null,
         height: null,
-        thick: .25,
-        pad: .125,
+        thick: 6,      // mm (was 0.25 inches)
+        pad: 3,        // mm (was 0.125 inches)
         cpoint: null,
         curvesegs: 50,
-        rings: [{ height: .5, segs: 12, clrs: defaultColors(), wood: defaultWood(), seglen: defaultLens(), xvals: [], theta: 0 }],
+        rings: [{ height: 19, segs: 12, clrs: defaultColors(), wood: defaultWood(), seglen: defaultLens(), xvals: [], theta: 0 }], // height in mm (was 0.5 inches)
         usedrings: 1,
 
         seltrapz: null,
@@ -35,9 +35,9 @@ import * as PERSISTENCE from './persistence.js';
         selring: 1,
         selseg: [],
         copyring: null,
-        step: 1 / 16,
-        inch: true, // Inches or mm
-        sawkerf: .125,
+        step: 0.5,      // mm (was 1/16 inch)
+        inch: false,    // false = mm (default), true = inches
+        sawkerf: 3,     // mm (was 0.125 inches)
     };
 
     const view2d = {
@@ -45,7 +45,7 @@ import * as PERSISTENCE from './persistence.js';
         ctx: null,
         canvas2: null,
         ctx2: null,
-        canvasinches: 8,
+        canvasmm: 200,  // mm (was canvasinches: 8)
         scale: null,
         bottom: null,
         centerx: null, // X-position of center
@@ -89,14 +89,14 @@ import * as PERSISTENCE from './persistence.js';
      Initialize
     ======================*/
     function init() {
-        view2d.bottom = view2d.canvas.height - 0.5 * view2d.scale;
+        view2d.bottom = view2d.canvas.height - 12.7 * view2d.scale;  // 12.7mm bottom margin (was 0.5 inches)
         view2d.centerx = view2d.canvas.width / 2;
 
         bowlprop.cpoint = [
-            { x: view2d.centerx + 1.0 * view2d.scale, y: view2d.bottom },
-            { x: view2d.centerx + 2.0 * view2d.scale, y: view2d.bottom },
-            { x: view2d.centerx + 2.0 * view2d.scale, y: view2d.bottom - 3.0 * view2d.scale },
-            { x: view2d.centerx + 2.5 * view2d.scale, y: view2d.bottom - 3.5 * view2d.scale }, // This point is will also be start of next bezier curve
+            { x: view2d.centerx + 25.4 * view2d.scale, y: view2d.bottom },                      // 25.4mm (was 1.0")
+            { x: view2d.centerx + 50.8 * view2d.scale, y: view2d.bottom },                      // 50.8mm (was 2.0")
+            { x: view2d.centerx + 50.8 * view2d.scale, y: view2d.bottom - 76.2 * view2d.scale },// 50.8mm, 76.2mm (was 2.0", 3.0")
+            { x: view2d.centerx + 63.5 * view2d.scale, y: view2d.bottom - 88.9 * view2d.scale },// 63.5mm, 88.9mm (was 2.5", 3.5") - start of next bezier curve
         ];
 
         view2d.canvas.onmousedown = mouseClick;
@@ -119,8 +119,10 @@ import * as PERSISTENCE from './persistence.js';
         el("showsegs").onchange = drawCanvas;
         el("showsegnum").onchange = drawCanvas;
         el("showratio").onchange = drawCanvas;
-        el("segHup").onclick = setSegHeight;
-        el("segHdn").onclick = setSegHeight;
+        el("segHupCoarse").onclick = setSegHeight;
+        el("segHupFine").onclick = setSegHeight;
+        el("segHdnFine").onclick = setSegHeight;
+        el("segHdnCoarse").onclick = setSegHeight;
         el("segNup").onclick = setSegCnt;
         el("segNdn").onclick = setSegCnt;
         el("segLup").onclick = setSegL;
@@ -158,14 +160,14 @@ import * as PERSISTENCE from './persistence.js';
         view3d.renderer.setClearColor("lightblue");
 
         view3d.scene = new THREE.Scene();
-        view3d.camera = new THREE.PerspectiveCamera(45, 1, 1, 100);
-        view3d.camera.position.set(0, view2d.canvasinches, view2d.canvasinches + 3);
+        view3d.camera = new THREE.PerspectiveCamera(45, 1, 1, 500);
+        view3d.camera.position.set(0, view2d.canvasmm, view2d.canvasmm + 50);
         const camlight = new THREE.PointLight(0xAAAAAA);
-        camlight.position.set(20, 30, 20);
+        camlight.position.set(200, 300, 200);
         view3d.camera.add(camlight);
 
         const controls = new OrbitControls(view3d.camera, view3d.renderer.domElement);
-        controls.target.set(0, 4, 0);
+        controls.target.set(0, 40, 0);
         controls.update();
         controls.addEventListener("change", render3D);
         view3d.scene.add(view3d.camera);
@@ -482,7 +484,7 @@ import * as PERSISTENCE from './persistence.js';
     function thickChange() {
         const slider = el("inptThick");
         bowlprop.thick = Number(slider.value);
-        el("valThick").innerHTML = reduce(slider.value);
+        el("valThick").innerHTML = reduce(bowlprop.thick);
         drawCanvas();
         build3D();
     }
@@ -490,17 +492,30 @@ import * as PERSISTENCE from './persistence.js';
     function padChange() {
         const slider = el("inptPad");
         bowlprop.pad = Number(slider.value);
-        el("valPad").innerHTML = reduce(slider.value);
+        el("valPad").innerHTML = reduce(bowlprop.pad);
         drawCanvas();
         build3D();
     }
 
     function setSegHeight(event) {
         if (ctrl.selring != null) {
-            if (event.target.id === "segHup") {
-                bowlprop.rings[ctrl.selring].height += ctrl.step;
-            } else if (bowlprop.rings[ctrl.selring].height - ctrl.step > 0) {
-                bowlprop.rings[ctrl.selring].height -= ctrl.step;
+            // Step sizes in mm (internal unit)
+            // mm mode: fine = 0.1mm, coarse = 0.5mm
+            // inch mode: fine = 1/64" = 0.397mm, coarse = 1/16" = 1.588mm
+            const fineStep = ctrl.inch ? 25.4 / 64 : 0.1;
+            const coarseStep = ctrl.inch ? 25.4 / 16 : 0.5;
+            
+            let delta = 0;
+            switch (event.target.id) {
+                case "segHupCoarse": delta = coarseStep; break;
+                case "segHupFine": delta = fineStep; break;
+                case "segHdnFine": delta = -fineStep; break;
+                case "segHdnCoarse": delta = -coarseStep; break;
+            }
+            
+            const newHeight = bowlprop.rings[ctrl.selring].height + delta;
+            if (newHeight > 0) {
+                bowlprop.rings[ctrl.selring].height = newHeight;
             }
             setRingHtxt();
             drawCanvas();
@@ -643,33 +658,25 @@ import * as PERSISTENCE from './persistence.js';
         const thick = el("inptThick");
         const pad = el("inptPad");
         if (el("inch").checked) {
+            // Display in inches - internal values stay in mm (no rounding on unit switch)
             ctrl.inch = true;
-            ctrl.step = 1 / 16;
-            bowlprop.thick = roundTo(bowlprop.thick, 16);
-            bowlprop.pad = roundTo(bowlprop.pad, 16);
-            for (const p in bowlprop.rings) {
-                bowlprop.rings[p].height = roundTo(bowlprop.rings[p].height, 16);
-            }
-            thick.setAttribute("step", 1 / 16);
+            ctrl.step = 1 / 64;  // Step for fractional inch display (used in reduce())
+            thick.setAttribute("step", 25.4 / 16);  // 1/16" in mm
             thick.value = bowlprop.thick;
-            pad.setAttribute("step", 1 / 16);
+            pad.setAttribute("step", 25.4 / 16);
             pad.value = bowlprop.pad;
             el("rptprec").style.visibility = "visible";
-            el("zoomTxt").innerHTML = 'View: ' + (view2d.canvasinches).toFixed(0).concat('"');
+            el("zoomTxt").innerHTML = 'View: ' + (view2d.canvasmm / 25.4).toFixed(0).concat('"');
         } else {
+            // Display in mm (default) - internal values stay in mm (no rounding on unit switch)
             ctrl.inch = false;
-            ctrl.step = 0.5 / 25.4;
-            bowlprop.thick = roundTo(bowlprop.thick * 25.4, 2) / 25.4;
-            bowlprop.pad = roundTo(bowlprop.pad * 25.4, 2) / 25.4;
-            for (const p in bowlprop.rings) {
-                bowlprop.rings[p].height = roundTo(bowlprop.rings[p].height * 25.4, 2) / 25.4;
-            }
-            thick.setAttribute("step", 0.5 / 25.4);
-            thick.setAttribute("value", bowlprop.thick);
-            pad.setAttribute("step", 0.5 / 25.4);
-            pad.setAttribute("value", bowlprop.pad);
+            ctrl.step = 0.5;  // 0.5mm step
+            thick.setAttribute("step", 0.5);
+            thick.value = bowlprop.thick;
+            pad.setAttribute("step", 0.5);
+            pad.value = bowlprop.pad;
             el("rptprec").style.visibility = "hidden";
-            el("zoomTxt").innerHTML = 'View: ' + (view2d.canvasinches * 2.54).toFixed(0).concat(' cm');
+            el("zoomTxt").innerHTML = 'View: ' + (view2d.canvasmm / 10).toFixed(0).concat(' cm');
         }
         thickChange();
         padChange();
@@ -680,41 +687,51 @@ import * as PERSISTENCE from './persistence.js';
 
     function loadSawKerf() {
         if (ctrl.inch) {
-            el("sawkerf").value = ctrl.sawkerf;
+            // Display sawkerf in inches (internal is mm)
+            el("sawkerf").value = (ctrl.sawkerf / 25.4).toFixed(3);
         } else {
-            el("sawkerf").value = (ctrl.sawkerf * 25.4).toFixed(3);
+            // Display sawkerf in mm
+            el("sawkerf").value = ctrl.sawkerf;
         }
     }
 
     function saveSawKerf() {
         if (ctrl.inch) {
-            ctrl.sawkerf = el("sawkerf").value;
+            // Convert input from inches to mm for internal storage
+            ctrl.sawkerf = parseFloat(el("sawkerf").value) * 25.4;
         } else {
-            ctrl.sawkerf = (el("sawkerf").value / 25.4).toFixed(3);
+            // Input is already in mm
+            ctrl.sawkerf = parseFloat(el("sawkerf").value);
         }
         loadSawKerf();
     }
 
     function zoom(event) {
-        let inc, mult, unit;
+        let inc, displayValue, unit;
         if (ctrl.inch) {
-            inc = 1;
-            mult = 1;
+            inc = 25.4;  // 1 inch in mm
+            displayValue = view2d.canvasmm / 25.4;  // Convert mm to inches for display
             unit = '"';
         } else {
-            inc = 10 / 25.4; // 1cm?
-            mult = 2.54;
+            inc = 10;  // 10mm = 1cm
+            displayValue = view2d.canvasmm / 10;  // Convert mm to cm for display
             unit = ' cm';
         }
         if (event.target.id === "zoomIn") { inc = -inc; }
-        if (event.target.id === "zoomIn" && view2d.canvasinches <= 2) { return; }
+        if (event.target.id === "zoomIn" && view2d.canvasmm <= 50) { return; }  // Min ~50mm
         const oldcp = screenToReal(view2d, bowlprop);
 
-        view2d.canvasinches += inc;
-        view2d.scale = view2d.ctx.canvas.width / view2d.canvasinches;
-        view2d.bottom = view2d.canvas.height - 0.5 * view2d.scale;
+        view2d.canvasmm += inc;
+        view2d.scale = view2d.ctx.canvas.width / view2d.canvasmm;
+        view2d.bottom = view2d.canvas.height - 12.7 * view2d.scale;
         view2d.centerx = view2d.canvas.width / 2;
-        el("zoomTxt").innerHTML = 'View: ' + (view2d.canvasinches * mult).toFixed(0).concat(unit);
+        
+        // Update display text
+        if (ctrl.inch) {
+            el("zoomTxt").innerHTML = 'View: ' + (view2d.canvasmm / 25.4).toFixed(0).concat(unit);
+        } else {
+            el("zoomTxt").innerHTML = 'View: ' + (view2d.canvasmm / 10).toFixed(0).concat(unit);
+        }
 
         for (const p in oldcp) {
             bowlprop.cpoint[p] = realToScreen(view2d, oldcp[p].x, oldcp[p].y);
@@ -741,8 +758,8 @@ import * as PERSISTENCE from './persistence.js';
             view2d.ctx.canvas.height = view2d.ctx.canvas.width;
             view2d.ctx2.canvas.width = view2d.ctx.canvas.width;
             view2d.ctx2.canvas.height = view2d.ctx2.canvas.width;
-            view2d.scale = view2d.ctx.canvas.width / view2d.canvasinches;
-            view2d.bottom = view2d.canvas.height - 0.5 * view2d.scale;
+            view2d.scale = view2d.ctx.canvas.width / view2d.canvasmm;
+            view2d.bottom = view2d.canvas.height - 12.7 * view2d.scale;
             view2d.centerx = view2d.canvas.width / 2;
 
             view3d.renderer.setSize(view2d.ctx.canvas.width, view2d.ctx.canvas.height);
@@ -937,6 +954,6 @@ import * as PERSISTENCE from './persistence.js';
     view2d.ctx.canvas.height = view2d.ctx.canvas.width;
     view2d.ctx2.canvas.width = (window.innerWidth - el("left").clientWidth) / 3 - 15;
     view2d.ctx2.canvas.height = view2d.ctx2.canvas.width;
-    view2d.scale = view2d.ctx.canvas.width / view2d.canvasinches;
+    view2d.scale = view2d.ctx.canvas.width / view2d.canvasmm;
     init();
 })();

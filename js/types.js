@@ -5,33 +5,33 @@
 
 /**
  * @typedef {Object} Point
- * @property {number} x - X coordinate
- * @property {number} y - Y coordinate
+ * @property {number} x - X coordinate (in mm)
+ * @property {number} y - Y coordinate (in mm)
  */
 
 /**
  * @typedef {Object} XVals
- * @property {number} max - Maximum x value (outer radius)
- * @property {number} min - Minimum x value (inner radius)
+ * @property {number} max - Maximum x value (outer radius in mm)
+ * @property {number} min - Minimum x value (inner radius in mm)
  */
 
 /**
  * @typedef {Object} Ring
- * @property {number} height - Height of the ring
+ * @property {number} height - Height of the ring (in mm)
  * @property {number} segs - Number of segments in the ring
  * @property {string[]} clrs - Array of color values for each segment
  * @property {string[]} wood - Array of wood type names for each segment
  * @property {number[]} seglen - Relative length multiplier for each segment
- * @property {XVals} xvals - Computed x-value bounds
+ * @property {XVals} xvals - Computed x-value bounds (in mm)
  * @property {number} theta - Rotation angle in radians
  */
 
 /**
  * @typedef {Object} BowlProp
- * @property {number|null} radius - Maximum radius of the bowl
- * @property {number|null} height - Total height of the bowl
- * @property {number} thick - Wall thickness
- * @property {number} pad - Padding/margin for cutting
+ * @property {number|null} radius - Maximum radius of the bowl (in mm)
+ * @property {number|null} height - Total height of the bowl (in mm)
+ * @property {number} thick - Wall thickness (in mm)
+ * @property {number} pad - Padding/margin for cutting (in mm)
  * @property {Point[]|null} cpoint - Control points for the bezier curve
  * @property {number} curvesegs - Number of segments for curve approximation
  * @property {Ring[]} rings - Array of ring definitions
@@ -48,9 +48,9 @@
  * @property {number|null} selring - Currently selected ring index
  * @property {number[]} selseg - Array of selected segment indices
  * @property {number|null} copyring - Ring index copied for paste
- * @property {number} step - Step size for adjustments (e.g., 1/16 inch)
- * @property {boolean} inch - True for inches, false for mm
- * @property {number} sawkerf - Saw blade kerf width
+ * @property {number} step - Step size for adjustments (in mm for mm mode, 1/16 for inch display mode)
+ * @property {boolean} inch - Display mode: true for inches, false for mm (internal values always in mm)
+ * @property {number} sawkerf - Saw blade kerf width (in mm)
  */
 
 /**
@@ -59,8 +59,8 @@
  * @property {CanvasRenderingContext2D|null} ctx - Primary canvas context
  * @property {HTMLCanvasElement|null} canvas2 - Secondary canvas for ring view
  * @property {CanvasRenderingContext2D|null} ctx2 - Secondary canvas context
- * @property {number} canvasinches - Canvas size in inches
- * @property {number|null} scale - Pixels per inch
+ * @property {number} canvasmm - Canvas size in mm
+ * @property {number|null} scale - Pixels per mm
  * @property {number|null} bottom - Y position of bowl bottom
  * @property {number|null} centerx - X position of center line
  */
@@ -103,18 +103,17 @@
 
 /**
  * @typedef {Object} CalcRingsResult
- * @property {number} height - Calculated bowl height
- * @property {number} radius - Calculated bowl radius
+ * @property {number} height - Calculated bowl height (in mm)
+ * @property {number} radius - Calculated bowl radius (in mm)
  * @property {number} usedrings - Number of rings used
  * @property {Ring[]} rings - Updated rings array with xvals computed
  */
 
 /**
  * @typedef {Object} CalcRingTrapzResult
- * @property {Point[][]} seltrapz - Array of trapezoid point arrays
+ * @property {Point[][]} seltrapz - Array of trapezoid point arrays (coordinates in mm)
  * @property {number[]} selthetas - Array of theta angles for each segment
  */
 
 // Export empty object to make this a module
 export {};
-

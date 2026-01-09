@@ -67,8 +67,8 @@ export function reduce(value, step = null, ctrl) {
     if (numerator > denominator) { //Mixed fraction
         const whole = Math.floor(numerator / denominator);
         numerator = numerator % denominator;
-        return whole.toString().concat(' ').concat(numerator / gcd).toString().concat('&frasl;').concat((denominator / gcd).toString().concat('"'));
+        return whole.toString().concat(' ').concat(numerator / gcd).toString().concat('⁄').concat((denominator / gcd).toString().concat('"'));
     }
-    return (numerator / gcd).toString().concat('&frasl;').concat((denominator / gcd).toString().concat('"'));
+    return (numerator / gcd).toString().concat('⁄').concat((denominator / gcd).toString().concat('"'));
 }
 

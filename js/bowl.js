@@ -119,8 +119,10 @@ import * as PERSISTENCE from './persistence.js';
         el("showsegs").onchange = drawCanvas;
         el("showsegnum").onchange = drawCanvas;
         el("showratio").onchange = drawCanvas;
-        el("segHup").onclick = setSegHeight;
-        el("segHdn").onclick = setSegHeight;
+        el("segHupCoarse").onclick = setSegHeight;
+        el("segHupFine").onclick = setSegHeight;
+        el("segHdnFine").onclick = setSegHeight;
+        el("segHdnCoarse").onclick = setSegHeight;
         el("segNup").onclick = setSegCnt;
         el("segNdn").onclick = setSegCnt;
         el("segLup").onclick = setSegL;
@@ -158,14 +160,14 @@ import * as PERSISTENCE from './persistence.js';
         view3d.renderer.setClearColor("lightblue");
 
         view3d.scene = new THREE.Scene();
-        view3d.camera = new THREE.PerspectiveCamera(45, 1, 1, 100);
-        view3d.camera.position.set(0, view2d.canvasmm, view2d.canvasmm + 3);
+        view3d.camera = new THREE.PerspectiveCamera(45, 1, 1, 500);
+        view3d.camera.position.set(0, view2d.canvasmm, view2d.canvasmm + 50);
         const camlight = new THREE.PointLight(0xAAAAAA);
-        camlight.position.set(20, 30, 20);
+        camlight.position.set(200, 300, 200);
         view3d.camera.add(camlight);
 
         const controls = new OrbitControls(view3d.camera, view3d.renderer.domElement);
-        controls.target.set(0, 4, 0);
+        controls.target.set(0, 40, 0);
         controls.update();
         controls.addEventListener("change", render3D);
         view3d.scene.add(view3d.camera);
@@ -482,7 +484,7 @@ import * as PERSISTENCE from './persistence.js';
     function thickChange() {
         const slider = el("inptThick");
         bowlprop.thick = Number(slider.value);
-        el("valThick").innerHTML = reduce(slider.value);
+        el("valThick").innerHTML = reduce(bowlprop.thick);
         drawCanvas();
         build3D();
     }
@@ -490,17 +492,30 @@ import * as PERSISTENCE from './persistence.js';
     function padChange() {
         const slider = el("inptPad");
         bowlprop.pad = Number(slider.value);
-        el("valPad").innerHTML = reduce(slider.value);
+        el("valPad").innerHTML = reduce(bowlprop.pad);
         drawCanvas();
         build3D();
     }
 
     function setSegHeight(event) {
         if (ctrl.selring != null) {
-            if (event.target.id === "segHup") {
-                bowlprop.rings[ctrl.selring].height += ctrl.step;
-            } else if (bowlprop.rings[ctrl.selring].height - ctrl.step > 0) {
-                bowlprop.rings[ctrl.selring].height -= ctrl.step;
+            // Step sizes in mm (internal unit)
+            // mm mode: fine = 0.1mm, coarse = 0.5mm
+            // inch mode: fine = 1/64" = 0.397mm, coarse = 1/16" = 1.588mm
+            const fineStep = ctrl.inch ? 25.4 / 64 : 0.1;
+            const coarseStep = ctrl.inch ? 25.4 / 16 : 0.5;
+            
+            let delta = 0;
+            switch (event.target.id) {
+                case "segHupCoarse": delta = coarseStep; break;
+                case "segHupFine": delta = fineStep; break;
+                case "segHdnFine": delta = -fineStep; break;
+                case "segHdnCoarse": delta = -coarseStep; break;
+            }
+            
+            const newHeight = bowlprop.rings[ctrl.selring].height + delta;
+            if (newHeight > 0) {
+                bowlprop.rings[ctrl.selring].height = newHeight;
             }
             setRingHtxt();
             drawCanvas();
@@ -643,15 +658,9 @@ import * as PERSISTENCE from './persistence.js';
         const thick = el("inptThick");
         const pad = el("inptPad");
         if (el("inch").checked) {
-            // Display in inches - internal values stay in mm
+            // Display in inches - internal values stay in mm (no rounding on unit switch)
             ctrl.inch = true;
-            ctrl.step = 1 / 16;  // Step for fractional inch display
-            // Round internal mm values to nearest 1/16" equivalent
-            bowlprop.thick = roundTo(bowlprop.thick / 25.4, 16) * 25.4;
-            bowlprop.pad = roundTo(bowlprop.pad / 25.4, 16) * 25.4;
-            for (const p in bowlprop.rings) {
-                bowlprop.rings[p].height = roundTo(bowlprop.rings[p].height / 25.4, 16) * 25.4;
-            }
+            ctrl.step = 1 / 64;  // Step for fractional inch display (used in reduce())
             thick.setAttribute("step", 25.4 / 16);  // 1/16" in mm
             thick.value = bowlprop.thick;
             pad.setAttribute("step", 25.4 / 16);
@@ -659,15 +668,9 @@ import * as PERSISTENCE from './persistence.js';
             el("rptprec").style.visibility = "visible";
             el("zoomTxt").innerHTML = 'View: ' + (view2d.canvasmm / 25.4).toFixed(0).concat('"');
         } else {
-            // Display in mm (default) - internal values stay in mm
+            // Display in mm (default) - internal values stay in mm (no rounding on unit switch)
             ctrl.inch = false;
             ctrl.step = 0.5;  // 0.5mm step
-            // Round internal mm values to nearest 0.5mm
-            bowlprop.thick = roundTo(bowlprop.thick, 2);
-            bowlprop.pad = roundTo(bowlprop.pad, 2);
-            for (const p in bowlprop.rings) {
-                bowlprop.rings[p].height = roundTo(bowlprop.rings[p].height, 2);
-            }
             thick.setAttribute("step", 0.5);
             thick.value = bowlprop.thick;
             pad.setAttribute("step", 0.5);

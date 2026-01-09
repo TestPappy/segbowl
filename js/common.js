@@ -71,4 +71,3 @@ export function reduce(value, step = null, ctrl) {
     }
     return (numerator / gcd).toString().concat('⁄').concat((denominator / gcd).toString().concat('"'));
 }
-

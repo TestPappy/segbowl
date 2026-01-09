@@ -15,7 +15,7 @@ export function screenToRealPoint(view2d, x, y) {
     // console.log("x: " + x + "; y: " + y);
     return {
         x: (x - view2d.canvas.width / 2) / view2d.scale,
-        y: (view2d.canvas.height - y) / view2d.scale - 12.5  // 12.7mm (was 0.5 inch)
+        y: (view2d.canvas.height - y) / view2d.scale - 12.7  // 12.7mm (was 0.5 inch)
     };
 }
 
@@ -27,7 +27,7 @@ export function screenToRealPoint(view2d, x, y) {
  * @param {number} [ofst=-12.7] - Y offset for positioning (in mm)
  * @returns {Point} Canvas coordinates
  */
-export function realToScreen(view2d, x, y, ofst = -12.5) {
+export function realToScreen(view2d, x, y, ofst = -12.7) {  // 12.7mm (was 0.5 inch)
     return {
         x: x * view2d.scale + view2d.canvas.width / 2,
         y: -(y - ofst) * view2d.scale + view2d.canvas.height
@@ -45,7 +45,7 @@ export function screenToReal(view2d, bowlprop) {
     for (const p in bowlprop.cpoint) {
         npoint.push(new THREE.Vector2(
             (bowlprop.cpoint[p].x - view2d.canvas.width / 2) / view2d.scale,
-            (view2d.canvas.height - bowlprop.cpoint[p].y) / view2d.scale - 12.7)); // 12.7mm to put at 0,0
+            (view2d.canvas.height - bowlprop.cpoint[p].y) / view2d.scale - 12.7)); // 12.7mm to put at 0,0 (was 0.5 inch)
     }
     return npoint;
 }
@@ -55,7 +55,7 @@ export function screenToReal(view2d, bowlprop) {
  * @param {View2D} view2d - The 2D view configuration
  * @param {BowlProp} bowlprop - The bowl properties
  * @param {boolean} [real=true] - Whether to convert to real coordinates
- * @returns {THREE.Vector2[]} Array of points along the bezier curve
+ * @returns {THREE.Vector2[]} Array of points along the bezier curve (in mm)
  */
 export function calcBezPath(view2d, bowlprop, real = true) {
     const rpoint = real ? screenToReal(view2d, bowlprop) : bowlprop.cpoint;
@@ -74,9 +74,9 @@ export function calcBezPath(view2d, bowlprop, real = true) {
 
 /**
  * Split curve into segments by ring Y boundaries
- * @param {Array<{x: number, y: number}>} curve - The curve points
+ * @param {Array<{x: number, y: number}>} curve - The curve points (in mm)
  * @param {BowlProp} bowlprop - The bowl properties
- * @returns {Array<Array<{x: number, y: number}>>} Array of curve segments per ring
+ * @returns {Array<Array<{x: number, y: number}>>} Array of curve segments per ring (in mm)
  */
 export function splitRingY(curve, bowlprop) {
     let y_from = 0;
@@ -118,9 +118,9 @@ export function splitRingY(curve, bowlprop) {
 
 /**
  * Create offset curves for inner and outer walls
- * @param {THREE.Vector2[]} curve - The original curve points
- * @param {number} offset - Offset distance (half wall thickness)
- * @returns {{c1: THREE.Vector2[], c2: THREE.Vector2[]}} Inner (c1) and outer (c2) wall curves
+ * @param {THREE.Vector2[]} curve - The original curve points (in mm)
+ * @param {number} offset - Offset distance (half wall thickness, in mm)
+ * @returns {{c1: THREE.Vector2[], c2: THREE.Vector2[]}} Inner (c1) and outer (c2) wall curves (in mm)
  */
 export function offsetCurve(curve, offset) {
     // Numerical approximation by shifting line segments
@@ -144,4 +144,3 @@ export function offsetCurve(curve, offset) {
     outerwall.push(innerwall[innerwall.length - 1]); // Close the gap
     return { c1: innerwall, c2: outerwall }; // c1 is inner wall, c2 outer wall
 }
-

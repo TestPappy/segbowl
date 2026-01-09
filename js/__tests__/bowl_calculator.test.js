@@ -1,6 +1,7 @@
 import { Vector2 } from "three";
 import { screenToRealPoint, realToScreen, screenToReal, splitRingY, calcBezPath, offsetCurve } from "../bowl_calculator.js";
 import { defaultColors, defaultLens } from "../common.js";
+
 // All measurements now in mm
 var canvasmm = 200;  // Was 8 inches (~203mm)
 var width = 500;
@@ -13,7 +14,7 @@ var view2d = {
         height: width
     },
     centerx: centerx,
-    bottom: height - 12.5 * scale,  // 12.7mm offset (was 0.5 inch)
+    bottom: height - 12.7 * scale,  // 12.7mm offset (was 0.5 inch)
     scale: scale
 };
 
@@ -21,13 +22,13 @@ describe('screenToRealPoint', () => {
     it('converts click on 250, 125 to real point', () => {
         var realPoint = screenToRealPoint(view2d, width, height / 2);
         expect(realPoint.x).toBe(canvasmm / 2);
-        expect(realPoint.y).toBe(canvasmm / 2 - 12.5);  // 12.7mm offset
+        expect(realPoint.y).toBe(canvasmm / 2 - 12.7);  // 12.7mm offset
     });
 
     it('converts click on 125, 0 to real point', () => {
         var realPoint = screenToRealPoint(view2d, width / 2, 0);
         expect(realPoint.x).toBe(0);
-        expect(realPoint.y).toBe(canvasmm - 12.5);  // 12.7mm offset
+        expect(realPoint.y).toBe(canvasmm - 12.7);  // 12.7mm offset
     });
 });
 
@@ -37,7 +38,7 @@ describe('realToScreen', () => {
         var realY = 75;   // mm
         var screenPoint = realToScreen(view2d, realX, realY);
         expect(screenPoint.x).toBe((width/2) + (realX * scale));
-        expect(screenPoint.y).toBe(-(realY + 12.5) * scale + height);  // 12.7mm offset
+        expect(screenPoint.y).toBe(-(realY + 12.7) * scale + height);  // 12.7mm offset
     });
 
     it('calculates screen point for coordinate (38, 108) in canvas2', ()=> {
@@ -104,7 +105,7 @@ describe('splitRingY', () => {
             { x: centerx + 50 * scale, y: view2d.bottom - 50 * scale },
             { x: centerx + 63 * scale, y: view2d.bottom - 63 * scale },
         ],
-        rings: [{ height: 12.5, segs: 12, clrs: defaultColors(), seglen: defaultLens(), xvals: [], theta: 0 },  // ~0.5 inch
+        rings: [{ height: 12.7, segs: 12, clrs: defaultColors(), seglen: defaultLens(), xvals: [], theta: 0 },  // ~0.5 inch
                 { height: 19, segs: 12, clrs: defaultColors(), seglen: defaultLens(), xvals: [], theta: 0 },    // ~0.75 inch
                 { height: 19, segs: 12, clrs: defaultColors(), seglen: defaultLens(), xvals: [], theta: 0 },
                 { height: 19, segs: 12, clrs: defaultColors(), seglen: defaultLens(), xvals: [], theta: 0 },

@@ -14,7 +14,7 @@ var view2d = {
         height: width
     },
     centerx: centerx,
-    bottom: height - 12.5 * scale,  // 12.7mm offset (was 0.5 inch)
+    bottom: height - 12.7 * scale,  // 12.7mm offset (was 0.5 inch)
     scale: scale
 };
 
@@ -26,10 +26,10 @@ var bowlprop = {
         { x: centerx + 63 * scale, y: view2d.bottom - 63 * scale }, // 63mm (was 2.5")
         { x: centerx + 89 * scale, y: view2d.bottom - 76 * scale }, // 89mm, 76mm (was 3.5", 3.0")
     ],
-    rings: [{ height: 12.5, segs: 12, clrs: defaultColors(), seglen: defaultLens(), xvals: [], theta: 0 },  // ~0.5"
-            { height: 12.5, segs: 14, clrs: defaultColors(), seglen: defaultLens(), xvals: [], theta: 0 },
-            { height: 12.5, segs: 16, clrs: defaultColors(), seglen: defaultLens(), xvals: [], theta: 0 },
-            { height: 12.5, segs: 18, clrs: defaultColors(), seglen: defaultLens(), xvals: [], theta: 0 },
+    rings: [{ height: 12.7, segs: 12, clrs: defaultColors(), seglen: defaultLens(), xvals: [], theta: 0 },  // ~0.5"
+            { height: 12.7, segs: 14, clrs: defaultColors(), seglen: defaultLens(), xvals: [], theta: 0 },
+            { height: 12.7, segs: 16, clrs: defaultColors(), seglen: defaultLens(), xvals: [], theta: 0 },
+            { height: 12.7, segs: 18, clrs: defaultColors(), seglen: defaultLens(), xvals: [], theta: 0 },
     ],
     curvesegs: 6,
     thick: 6,      // 6mm (was 0.25")

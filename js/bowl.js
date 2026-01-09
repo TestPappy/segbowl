@@ -45,7 +45,7 @@ import * as PERSISTENCE from './persistence.js';
         ctx: null,
         canvas2: null,
         ctx2: null,
-        canvasmm: 200,  // mm (was canvasmm: 8)
+        canvasmm: 200,  // mm (was canvasinches: 8)
         scale: null,
         bottom: null,
         centerx: null, // X-position of center
@@ -89,7 +89,7 @@ import * as PERSISTENCE from './persistence.js';
      Initialize
     ======================*/
     function init() {
-        view2d.bottom = view2d.canvas.height - 12.5 * view2d.scale;  // 12.7mm bottom margin (was 0.5 inches)
+        view2d.bottom = view2d.canvas.height - 12.7 * view2d.scale;  // 12.7mm bottom margin (was 0.5 inches)
         view2d.centerx = view2d.canvas.width / 2;
 
         bowlprop.cpoint = [
@@ -759,7 +759,7 @@ import * as PERSISTENCE from './persistence.js';
             view2d.ctx2.canvas.width = view2d.ctx.canvas.width;
             view2d.ctx2.canvas.height = view2d.ctx2.canvas.width;
             view2d.scale = view2d.ctx.canvas.width / view2d.canvasmm;
-            view2d.bottom = view2d.canvas.height - 12.5 * view2d.scale;
+            view2d.bottom = view2d.canvas.height - 12.7 * view2d.scale;
             view2d.centerx = view2d.canvas.width / 2;
 
             view3d.renderer.setSize(view2d.ctx.canvas.width, view2d.ctx.canvas.height);

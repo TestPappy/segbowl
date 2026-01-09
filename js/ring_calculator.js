@@ -117,4 +117,3 @@ export function calcRingTrapz(bowlprop, ringidx, rotate = true) {
     
     return { seltrapz: trapzlist, selthetas: thetas };
 }
-

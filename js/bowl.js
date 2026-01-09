@@ -5,17 +5,17 @@
 */
 import * as THREE from 'three';
 import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
-import { defaultColors, defaultWood, defaultLens, capitalize } from './common.mjs';
-import { screenToRealPoint, realToScreen, screenToReal, calcBezPath, splitRingY, offsetCurve } from './bowl_calculator.mjs';
-import { calcRings } from './ring_calculator.mjs';
-import { createReport, getReportSegsList } from './report.mjs';
+import { defaultColors, defaultWood, defaultLens, capitalize, reduce as reduceValue } from './common.js';
+import { screenToRealPoint, realToScreen, screenToReal, calcBezPath, splitRingY, offsetCurve } from './bowl_calculator.js';
+import { calcRings } from './ring_calculator.js';
+import { createReport, getReportSegsList } from './report.js';
 import { clearCanvas, drawCurve, drawRing, drawSegProfile } from './drawing.js';
-import * as PERSISTENCE from './persistence.mjs';
+import * as PERSISTENCE from './persistence.js';
 
 (() => {
     const version = "0.2";
 
-    var bowlprop = {
+    let bowlprop = {
         radius: null,
         height: null,
         thick: .25,
@@ -29,7 +29,7 @@ import * as PERSISTENCE from './persistence.mjs';
         selthetas: null, // List of theta angles starting each segment in selected ring
     };
 
-    var ctrl = {
+    let ctrl = {
         drag: null,
         dPoint: null,
         selring: 1,
@@ -40,7 +40,7 @@ import * as PERSISTENCE from './persistence.mjs';
         sawkerf: .125,
     };
 
-    var view2d = {
+    const view2d = {
         canvas: null,
         ctx: null,
         canvas2: null,
@@ -51,7 +51,7 @@ import * as PERSISTENCE from './persistence.mjs';
         centerx: null, // X-position of center
     };
 
-    var view3d = {
+    const view3d = {
         canvas: null,
         renderer: null,
         scene: null,
@@ -60,7 +60,7 @@ import * as PERSISTENCE from './persistence.mjs';
         mesh: [],
     };
 
-    var style = {
+    const style = {
         curve: { width: 8, color: "#333" },
         cpline: { width: 1, color: "#06C" },
         point: { radius: 5, width: 2, color: "#06C", fill: "rgba(200,200,200,0.5)" },
@@ -70,6 +70,20 @@ import * as PERSISTENCE from './persistence.mjs';
         copyring: { width: 3, color: "#0000FF" },
         gratio: { width: 1, color: "#555555" }
     };
+
+    // DOM helper - cache getElementById calls
+    const el = id => document.getElementById(id);
+
+    // Material cache for THREE.js - reuse materials with same color
+    const materialCache = new Map();
+    function getMaterial(color) {
+        if (!materialCache.has(color)) {
+            const mat = new THREE.MeshPhongMaterial({ color });
+            mat.side = THREE.DoubleSide;
+            materialCache.set(color, mat);
+        }
+        return materialCache.get(color);
+    }
 
     /*======================
      Initialize
@@ -91,7 +105,6 @@ import * as PERSISTENCE from './persistence.mjs';
         view2d.canvas.ondblclick = addRemovePoint;
         view2d.canvas2.onmousedown = segClick;
 
-        const el = id => document.getElementById(id);
         el("btnView").onclick = showMenu;
         el("btnOptions").onclick = showMenu;
         el("btnBowl").onclick = showMenu;
@@ -127,8 +140,8 @@ import * as PERSISTENCE from './persistence.mjs';
         el("cleardesign").onclick = clear;
         el("sawkerf").onchange = saveSawKerf;
         window.addEventListener('resize', resizeWindow);
-        var btnclrclass = document.getElementsByClassName("clrbtn");
-        for (var i = 0; i < btnclrclass.length; i++) {
+        const btnclrclass = document.getElementsByClassName("clrbtn");
+        for (let i = 0; i < btnclrclass.length; i++) {
             btnclrclass[i].onclick = colorChange;
         }
 
@@ -147,16 +160,16 @@ import * as PERSISTENCE from './persistence.mjs';
         view3d.scene = new THREE.Scene();
         view3d.camera = new THREE.PerspectiveCamera(45, 1, 1, 100);
         view3d.camera.position.set(0, view2d.canvasinches, view2d.canvasinches + 3);
-        var camlight = new THREE.PointLight(0xAAAAAA);
+        const camlight = new THREE.PointLight(0xAAAAAA);
         camlight.position.set(20, 30, 20);
         view3d.camera.add(camlight);
 
-        var controls = new OrbitControls(view3d.camera, view3d.renderer.domElement);
+        const controls = new OrbitControls(view3d.camera, view3d.renderer.domElement);
         controls.target.set(0, 4, 0);
         controls.update();
         controls.addEventListener("change", render3D);
         view3d.scene.add(view3d.camera);
-        var light = new THREE.AmbientLight(0xffffff, .6);
+        const light = new THREE.AmbientLight(0xffffff, .6);
         view3d.scene.add(light);
         /* var axisHelper = new THREE.AxisHelper(5);
         view3d.scene.add(axisHelper);  */
@@ -173,7 +186,7 @@ import * as PERSISTENCE from './persistence.mjs';
         ctx.strokeStyle = style.cpline.color;
         ctx.beginPath();
         ctx.moveTo(bowlprop.cpoint[0].x, bowlprop.cpoint[0].y);
-        for (var i = 0; i < bowlprop.cpoint.length - 1; i += 3) {
+        for (let i = 0; i < bowlprop.cpoint.length - 1; i += 3) {
             ctx.lineTo(bowlprop.cpoint[i + 1].x, bowlprop.cpoint[i + 1].y);
             ctx.moveTo(bowlprop.cpoint[i + 2].x, bowlprop.cpoint[i + 2].y);
             ctx.lineTo(bowlprop.cpoint[i + 3].x, bowlprop.cpoint[i + 3].y);
@@ -182,9 +195,9 @@ import * as PERSISTENCE from './persistence.mjs';
     }
 
     function drawScale(ctx, size) {
-        var topleft = realToScreen(view2d, -bowlprop.radius, bowlprop.height);
-        var botright = realToScreen(view2d, bowlprop.radius, 0);
-        var middleX = (botright.x + topleft.x)/2;
+        const topleft = realToScreen(view2d, -bowlprop.radius, bowlprop.height);
+        const botright = realToScreen(view2d, bowlprop.radius, 0);
+        const middleX = (botright.x + topleft.x)/2;
         ctx.lineWidth = 1;
         ctx.strokeStyle = "#000000";
         ctx.beginPath();
@@ -203,20 +216,15 @@ import * as PERSISTENCE from './persistence.mjs';
         ctx.stroke();
     }
 
-    function getMaxDiameter() {
-        var max = 0;
-        var maxDiameter = 0;
-        for(let i = 0; i < bowlprop.rings.length; i++) {
-            var diameter = bowlprop.rings[i].xvals.max * 2;
-            if (diameter > maxDiameter) {
-                max = i;
-            }
-        }
-        return reduce(bowlprop.rings[max].xvals.max);
+    function getMaxRadius() {
+        const radii = bowlprop.rings
+            .map(r => (r.xvals && typeof r.xvals.max === 'number') ? r.xvals.max : 0);
+        const maxRadius = Math.max(...radii, 0);
+        return reduce(maxRadius);
     }
 
     function drawControlPoints(ctx) {
-        for (var i = 0; i < bowlprop.cpoint.length; i++) {
+        for (let i = 0; i < bowlprop.cpoint.length; i++) {
             ctx.lineWidth = style.point.width;
             ctx.strokeStyle = style.point.color;
             ctx.fillStyle = style.point.fill;
@@ -230,10 +238,10 @@ import * as PERSISTENCE from './persistence.mjs';
     function drawGRatio(ctx) {
         ctx.lineWidth = style.gratio.width;
         ctx.strokeStyle = style.gratio.color;
-        var topleft = realToScreen(view2d, -bowlprop.radius, bowlprop.height);
-        var botright = realToScreen(view2d, bowlprop.radius, 0);
-        var g = (botright.y - topleft.y) / 1.618;
-        var g2 = (botright.x - topleft.x) / 1.618;
+        const topleft = realToScreen(view2d, -bowlprop.radius, bowlprop.height);
+        const botright = realToScreen(view2d, bowlprop.radius, 0);
+        const g = (botright.y - topleft.y) / 1.618;
+        const g2 = (botright.x - topleft.x) / 1.618;
         ctx.beginPath();
         ctx.rect(topleft.x, topleft.y, 2 * bowlprop.radius * view2d.scale, bowlprop.height * view2d.scale);
         ctx.stroke();
@@ -253,42 +261,42 @@ import * as PERSISTENCE from './persistence.mjs';
     function drawCanvas() {
         clearCanvas(view2d.canvas, view2d.ctx, view2d.canvas.height);
         clearCanvas(view2d.canvas2, view2d.ctx2, view2d.canvas.height);
-        if (document.getElementById("showsegs").checked) {
+        if (el("showsegs").checked) {
             drawSegProfile(view2d.ctx, bowlprop, view2d, ctrl, style);
         }
-        if (document.getElementById("showratio").checked) {
+        if (el("showratio").checked) {
             drawGRatio(view2d.ctx);
         }
         drawControlLines(view2d.ctx);
         drawCurve(view2d.ctx, bowlprop, view2d, style);
         drawControlPoints(view2d.ctx);
-        drawScale(view2d.ctx, getMaxDiameter());
-        if (document.getElementById("canvas2").style.display != "none" && ctrl.selring != null) {
+        drawScale(view2d.ctx, getMaxRadius());
+        if (el("canvas2").style.display != "none" && ctrl.selring != null) {
             drawRing(view2d.ctx2, ctrl.selring, bowlprop, view2d, ctrl, style);
         }
         updateRingInfo();
     }
 
     function build3D() {
-        if (document.getElementById("canvas3d").style.display == 'none') { return; } // Don't calculate if not shown
-        var curve = calcBezPath(view2d, bowlprop);
-        calcRings(view2d, bowlprop);
-        var offcurve = offsetCurve(curve, bowlprop.thick / 2);
-        for (var m = 0; m < view3d.mesh.length; m++) {
+        if (el("canvas3d").style.display == 'none') { return; } // Don't calculate if not shown
+        const curve = calcBezPath(view2d, bowlprop);
+        const ringResult = calcRings(view2d, bowlprop);
+        Object.assign(bowlprop, ringResult);
+        const offcurve = offsetCurve(curve, bowlprop.thick / 2);
+        for (let m = 0; m < view3d.mesh.length; m++) {
             view3d.mesh[m].geometry.dispose();
-            view3d.mesh[m].material.dispose();
+            // Materials are cached and reused - don't dispose
             view3d.scene.remove(view3d.mesh[m]);
         }
         view3d.mesh = [];
 
-        var curvesegs = splitRingY(offcurve.c2, bowlprop); // Outer wall
-        for (var i = 0; i < curvesegs.length; i++) {
+        let curvesegs = splitRingY(offcurve.c2, bowlprop); // Outer wall
+        for (let i = 0; i < curvesegs.length; i++) {
             if (curvesegs[i].length > 1) {
-                var tottheta = bowlprop.rings[i].theta;
-                for (var seg = 0; seg < bowlprop.rings[i].segs; seg++) {
-                    var theta = (2 * Math.PI / bowlprop.rings[i].segs) * bowlprop.rings[i].seglen[seg];
-                    var material = new THREE.MeshPhongMaterial({ color: bowlprop.rings[i].clrs[seg] });
-                    material.side = THREE.DoubleSide;
+                let tottheta = bowlprop.rings[i].theta;
+                for (let seg = 0; seg < bowlprop.rings[i].segs; seg++) {
+                    const theta = (2 * Math.PI / bowlprop.rings[i].segs) * bowlprop.rings[i].seglen[seg];
+                    const material = getMaterial(bowlprop.rings[i].clrs[seg]);
                     view3d.mesh.push(new THREE.Mesh(
                         new THREE.LatheGeometry(
                             curvesegs[i], 10, tottheta, theta), material));
@@ -298,13 +306,12 @@ import * as PERSISTENCE from './persistence.mjs';
             }
         }
         curvesegs = splitRingY(offcurve.c1, bowlprop); // Inner wall
-        for (var i = 0; i < curvesegs.length; i++) {
+        for (let i = 0; i < curvesegs.length; i++) {
             if (curvesegs[i].length > 1) {
-                tottheta = bowlprop.rings[i].theta;
-                for (var seg = 0; seg < bowlprop.rings[i].segs; seg++) {
-                    var theta = (2 * Math.PI / bowlprop.rings[i].segs) * bowlprop.rings[i].seglen[seg];
-                    var material = new THREE.MeshPhongMaterial({ color: bowlprop.rings[i].clrs[seg] });
-                    material.side = THREE.DoubleSide;
+                let tottheta = bowlprop.rings[i].theta;
+                for (let seg = 0; seg < bowlprop.rings[i].segs; seg++) {
+                    const theta = (2 * Math.PI / bowlprop.rings[i].segs) * bowlprop.rings[i].seglen[seg];
+                    const material = getMaterial(bowlprop.rings[i].clrs[seg]);
                     view3d.mesh.push(new THREE.Mesh(
                         new THREE.LatheGeometry(
                             curvesegs[i], 10, tottheta, theta), material));
@@ -323,38 +330,38 @@ import * as PERSISTENCE from './persistence.mjs';
     /*======================
      Event handlers
     ======================*/
-    function showMenu() {
-        var s = {
+    function showMenu(event) {
+        const s = {
             btnOptions: "mnuOptions",
             btnView: "mnuView",
             btnBowl: "mnuBowl",
             btnRing: "mnuRing",
             btnSeg: "mnuSeg"
-        }[this.id];
-        var e = document.getElementById(s);
+        }[event.target.id];
+        const e = el(s);
         if (e.style.display == "none") { e.style.display = "inline"; }
         else { e.style.display = "none"; }
     }
 
     function range(start, stop, step = 1) {
-        var A = [];
-        for (var i = start; i <= stop; i += step) { A.push(i); }
+        const A = [];
+        for (let i = start; i <= stop; i += step) { A.push(i); }
         return A;
     }
 
     function segClick(e) {
-        var e = mousePos(e, view2d.canvas2);
-        var dx, dy, r, theta, seg;
-        dx = (e.x - view2d.centerx) / view2d.scale;
-        dy = (e.y - view2d.centerx) / view2d.scale; // Always a square
-        r = Math.sqrt((dx * dx) + (dy * dy));
+        const pos = mousePos(e, view2d.canvas2);
+        let theta, seg;
+        const dx = (pos.x - view2d.centerx) / view2d.scale;
+        const dy = (pos.y - view2d.centerx) / view2d.scale; // Always a square
+        const r = Math.sqrt((dx * dx) + (dy * dy));
         if (r >= bowlprop.rings[ctrl.selring].xvals.min - bowlprop.pad && r < bowlprop.rings[ctrl.selring].xvals.max + bowlprop.pad) {
-            var inc = document.getElementById("segselect").value;
+            const inc = el("segselect").value;
             if (inc == "all") {
                 ctrl.selseg = range(0, bowlprop.rings[ctrl.selring].segs - 1);
             } else {
                 theta = (Math.atan2(-dy, dx) + 2 * Math.PI) % (2 * Math.PI);
-                for (var s = 1; s < bowlprop.selthetas.length; s++) {
+                for (let s = 1; s < bowlprop.selthetas.length; s++) {
                     if (theta <= bowlprop.selthetas[s]) { seg = s - 1; break; }
                     seg = bowlprop.selthetas.length - 1;
                 }
@@ -371,31 +378,31 @@ import * as PERSISTENCE from './persistence.mjs';
     }
 
     function mouseClick(e) {
-        e = mousePos(e, view2d.canvas);
-        var dx, dy;
+        let pos = mousePos(e, view2d.canvas);
+        let dx, dy;
         // Check if near a control point
-        for (var i = 0; i < bowlprop.cpoint.length; i++) {
-            dx = bowlprop.cpoint[i].x - e.x;
-            dy = bowlprop.cpoint[i].y - e.y;
+        for (let i = 0; i < bowlprop.cpoint.length; i++) {
+            dx = bowlprop.cpoint[i].x - pos.x;
+            dy = bowlprop.cpoint[i].y - pos.y;
             if ((dx * dx) + (dy * dy) < style.point.radius * style.point.radius) {
                 ctrl.drag = i;
-                ctrl.dPoint = e;
+                ctrl.dPoint = pos;
                 view2d.canvas.style.cursor = "move";
                 return;
             }
         }
         // Not near ctrl point, check if in a segment
-        e = screenToRealPoint(view2d, e.x, e.y);
-        var y = -bowlprop.thick / 2;
-        for (var i = 0; i < bowlprop.rings.length; i++) {
-            if (e.x > bowlprop.rings[i].xvals.min && e.x < bowlprop.rings[i].xvals.max
-                && e.y > y && e.y < y + bowlprop.rings[i].height) {
+        pos = screenToRealPoint(view2d, pos.x, pos.y);
+        let y = -bowlprop.thick / 2;
+        for (let i = 0; i < bowlprop.rings.length; i++) {
+            if (pos.x > bowlprop.rings[i].xvals.min && pos.x < bowlprop.rings[i].xvals.max
+                && pos.y > y && pos.y < y + bowlprop.rings[i].height) {
                 ctrl.selring = i;
                 ctrl.selseg = [];
                 drawCanvas();
                 setRingHtxt();
                 setSegCntTxt();
-                document.getElementById("ringrot").value = bowlprop.rings[i].theta * 180 / Math.PI;
+                el("ringrot").value = bowlprop.rings[i].theta * 180 / Math.PI;
                 return;
             }
             y += bowlprop.rings[i].height;
@@ -406,12 +413,12 @@ import * as PERSISTENCE from './persistence.mjs';
 
     function dragging(e) {
         if (ctrl.drag !== null) {
-            e = mousePos(e, view2d.canvas);
-            bowlprop.cpoint[ctrl.drag].x += e.x - ctrl.dPoint.x;
-            bowlprop.cpoint[ctrl.drag].y += e.y - ctrl.dPoint.y;
-            ctrl.dPoint = e;
+            const pos = mousePos(e, view2d.canvas);
+            bowlprop.cpoint[ctrl.drag].x += pos.x - ctrl.dPoint.x;
+            bowlprop.cpoint[ctrl.drag].y += pos.y - ctrl.dPoint.y;
+            ctrl.dPoint = pos;
             drawCanvas();
-            if (document.getElementById("redrawdrag").checked) {
+            if (el("redrawdrag").checked) {
                 build3D();
             }
         }
@@ -427,23 +434,24 @@ import * as PERSISTENCE from './persistence.mjs';
     function addRemovePoint(e) {
         // If position (e) close to existing control point, remove it
         // otherwise if close to line, add a new control point
-        e = mousePos(e, view2d.canvas);
-        for (var i = 0; i < bowlprop.cpoint.length; i += 3) { // Go by 3 to get cpoints ON line
-            dx = bowlprop.cpoint[i].x - e.x;
-            dy = bowlprop.cpoint[i].y - e.y;
+        const pos = mousePos(e, view2d.canvas);
+        let dx, dy;
+        for (let i = 0; i < bowlprop.cpoint.length; i += 3) { // Go by 3 to get cpoints ON line
+            dx = bowlprop.cpoint[i].x - pos.x;
+            dy = bowlprop.cpoint[i].y - pos.y;
             if ((dx * dx) + (dy * dy) < style.point.radius * style.point.radius) {
-                if (i == 0 || i == bowlprop.cpoint.length - 1) { return; }; // Don't remove first or last point
+                if (i == 0 || i == bowlprop.cpoint.length - 1) { return; } // Don't remove first or last point
                 bowlprop.cpoint.splice(i - 1, 3); // Remove point and associated ctrl pts
                 drawCanvas();
                 return;
             }
         }
 
-        var dmin = 1000, imin;
-        var path = calcBezPath(view2d, bowlprop, false);
-        for (var i = 1; i < path.length; i++) {
-            dx = path[i].x - e.x;
-            dy = path[i].y - e.y;
+        let dmin = 1000, imin;
+        const path = calcBezPath(view2d, bowlprop, false);
+        for (let i = 1; i < path.length; i++) {
+            dx = path[i].x - pos.x;
+            dy = path[i].y - pos.y;
             if (dmin > dx * dx + dy * dy) { // Find closest point to the curve
                 dmin = dx * dx + dy * dy;
                 imin = i;
@@ -451,8 +459,8 @@ import * as PERSISTENCE from './persistence.mjs';
         }
         if (dmin < style.point.radius * style.point.radius) {
             // If we're close enough, insert a point and 2 tangential control points
-            t = imin / path.length - path.length / bowlprop.curvesegs;
-            idx = 2 + 3 * Math.floor(imin / bowlprop.curvesegs);
+            const t = imin / path.length - path.length / bowlprop.curvesegs;
+            const idx = 2 + 3 * Math.floor(imin / bowlprop.curvesegs);
             bowlprop.cpoint.splice(idx, 0, path[imin + 2]);
             bowlprop.cpoint.splice(idx, 0, path[imin]);
             bowlprop.cpoint.splice(idx, 0, path[imin - 2]);
@@ -460,30 +468,8 @@ import * as PERSISTENCE from './persistence.mjs';
         }
     }
 
-    function reduce(value, step = null) {
-        if (ctrl.inch == false) {
-            return (value * 25.4).toFixed(1).concat(' mm');
-        } else if (isNaN(step) || step == "decimal") {
-            return value.toFixed(1).concat('"');
-        }
-        if (step == null) { step = ctrl.step; }
-
-        if (value == 0) { return '0"'; }
-        var numerator = Math.round(value / step);
-        var denominator = 1 / step;
-        if (numerator == denominator) { return '1"'; };
-        var gcd = function gcd(a, b) {
-            return b ? gcd(b, a % b) : a;
-        };
-        gcd = gcd(numerator, denominator);
-        if (gcd == denominator) { return (numerator / denominator).toString().concat('"'); } // Whole number
-        if (numerator > denominator) { //Mixed fraction
-            var whole = Math.floor(numerator / denominator);
-            numerator = numerator % denominator;
-            return whole.toString().concat(' ').concat(numerator / gcd).toString().concat('&frasl;').concat((denominator / gcd).toString().concat('"'));
-        }
-        return (numerator / gcd).toString().concat('&frasl;').concat((denominator / gcd).toString().concat('"'));
-    }
+    // Wrapper to use shared reduce with local ctrl
+    const reduce = (value, step = null) => reduceValue(value, step, ctrl);
 
     function mousePos(event, canvas) {
         event = (event ? event : window.event);
@@ -494,24 +480,24 @@ import * as PERSISTENCE from './persistence.mjs';
     }
 
     function thickChange() {
-        var slider = document.getElementById("inptThick");
+        const slider = el("inptThick");
         bowlprop.thick = Number(slider.value);
-        document.getElementById("valThick").innerHTML = reduce(slider.value);
+        el("valThick").innerHTML = reduce(slider.value);
         drawCanvas();
         build3D();
     }
 
     function padChange() {
-        var slider = document.getElementById("inptPad");
+        const slider = el("inptPad");
         bowlprop.pad = Number(slider.value);
-        document.getElementById("valPad").innerHTML = reduce(slider.value);
+        el("valPad").innerHTML = reduce(slider.value);
         drawCanvas();
         build3D();
     }
 
-    function setSegHeight() {
+    function setSegHeight(event) {
         if (ctrl.selring != null) {
-            if (this.id == "segHup") {
+            if (event.target.id === "segHup") {
                 bowlprop.rings[ctrl.selring].height += ctrl.step;
             } else if (bowlprop.rings[ctrl.selring].height - ctrl.step > 0) {
                 bowlprop.rings[ctrl.selring].height -= ctrl.step;
@@ -522,8 +508,8 @@ import * as PERSISTENCE from './persistence.mjs';
         }
     }
 
-    function setSegCnt() {
-        if (this.id == "segNup") {
+    function setSegCnt(event) {
+        if (event.target.id === "segNup") {
             bowlprop.rings[ctrl.selring].segs += 1;
             if (bowlprop.rings[ctrl.selring].clrs.length < bowlprop.rings[ctrl.selring].segs) {
                 bowlprop.rings[ctrl.selring].clrs.push(bowlprop.rings[ctrl.selring].clrs[bowlprop.rings[ctrl.selring].clrs.length - 1]);
@@ -542,18 +528,18 @@ import * as PERSISTENCE from './persistence.mjs';
         build3D();
     }
 
-    function setSegL() {
-        if (this.id == "segLreset") {
+    function setSegL(event) {
+        if (event.target.id === "segLreset") {
             bowlprop.rings[ctrl.selring].seglen = defaultLens(bowlprop.rings[ctrl.selring].segs);
         } else if (ctrl.selseg.length != bowlprop.rings[ctrl.selring].segs) {
-            var inc = .05; // 5%
-            if (this.id == "segLdn") { inc = -inc; }
-            var dec = inc * ctrl.selseg.length / (bowlprop.rings[ctrl.selring].segs - ctrl.selseg.length);
-            for (var i = 0; i < ctrl.selseg.length; i++) {
+            let inc = .05; // 5%
+            if (event.target.id === "segLdn") { inc = -inc; }
+            const dec = inc * ctrl.selseg.length / (bowlprop.rings[ctrl.selring].segs - ctrl.selseg.length);
+            for (let i = 0; i < ctrl.selseg.length; i++) {
                 // Selected rings go up by inc
                 bowlprop.rings[ctrl.selring].seglen[ctrl.selseg[i]] += inc;
             }
-            for (var i = 0; i < bowlprop.rings[ctrl.selring].segs; i++) {
+            for (let i = 0; i < bowlprop.rings[ctrl.selring].segs; i++) {
                 if (ctrl.selseg.indexOf(i) == -1) {
                     bowlprop.rings[ctrl.selring].seglen[i] -= dec;
                 }
@@ -563,20 +549,20 @@ import * as PERSISTENCE from './persistence.mjs';
         build3D();
     }
 
-    function rotateRing() {
+    function rotateRing(event) {
         if (ctrl.selring != null) {
-            bowlprop.rings[ctrl.selring].theta = Math.PI / 180 * this.value;
+            bowlprop.rings[ctrl.selring].theta = Math.PI / 180 * event.target.value;
             drawCanvas();
             build3D();
         }
     }
 
     function twist() {
-        var step = Math.PI / 180 * parseFloat(prompt("Enter total rotation", "30")) / bowlprop.usedrings;
-        for (var i = 0; i < bowlprop.usedrings; i++) {
+        const step = Math.PI / 180 * parseFloat(prompt("Enter total rotation", "30")) / bowlprop.usedrings;
+        for (let i = 0; i < bowlprop.usedrings; i++) {
             bowlprop.rings[i].theta = i * step;
         }
-        document.getElementById("ringrot").value = bowlprop.rings[ctrl.selring].theta * 180 / Math.PI;
+        el("ringrot").value = bowlprop.rings[ctrl.selring].theta * 180 / Math.PI;
         drawCanvas();
         build3D();
     }
@@ -597,18 +583,18 @@ import * as PERSISTENCE from './persistence.mjs';
                 seglen: [],
                 theta: bowlprop.rings[ctrl.copyring].theta,
             };
-            for (var c in bowlprop.rings[ctrl.copyring].clrs) { bowlprop.rings[ctrl.selring].clrs.push(bowlprop.rings[ctrl.copyring].clrs[c]); }
-            for (var c in bowlprop.rings[ctrl.copyring].wood) { bowlprop.rings[ctrl.selring].wood.push(bowlprop.rings[ctrl.copyring].wood[c]); }
-            for (var c in bowlprop.rings[ctrl.copyring].seglen) { bowlprop.rings[ctrl.selring].seglen.push(bowlprop.rings[ctrl.copyring].seglen[c]); }
+            for (const c in bowlprop.rings[ctrl.copyring].clrs) { bowlprop.rings[ctrl.selring].clrs.push(bowlprop.rings[ctrl.copyring].clrs[c]); }
+            for (const c in bowlprop.rings[ctrl.copyring].wood) { bowlprop.rings[ctrl.selring].wood.push(bowlprop.rings[ctrl.copyring].wood[c]); }
+            for (const c in bowlprop.rings[ctrl.copyring].seglen) { bowlprop.rings[ctrl.selring].seglen.push(bowlprop.rings[ctrl.copyring].seglen[c]); }
             ctrl.copyring = null;
             drawCanvas();
             build3D();
         }
     }
 
-    function colorChange() {
-        var clr = this.style.backgroundColor;
-        for (var i = 0; i < ctrl.selseg.length; i++) {
+    function colorChange(event) {
+        const clr = event.target.style.backgroundColor;
+        for (let i = 0; i < ctrl.selseg.length; i++) {
             bowlprop.rings[ctrl.selring].clrs[ctrl.selseg[i]] = clr;
             bowlprop.rings[ctrl.selring].wood[ctrl.selseg[i]] = getWoodByColor(clr);
         }
@@ -617,27 +603,28 @@ import * as PERSISTENCE from './persistence.mjs';
     }
 
     function setSegCntTxt() {
-        document.getElementById("segNtxt").innerHTML = "Segments: ".concat(bowlprop.rings[ctrl.selring].segs);
+        el("segNtxt").innerHTML = "Segments: ".concat(bowlprop.rings[ctrl.selring].segs);
     }
 
     function setRingHtxt() {
-        document.getElementById("segHtxt").innerHTML = reduce(bowlprop.rings[ctrl.selring].height);
+        el("segHtxt").innerHTML = reduce(bowlprop.rings[ctrl.selring].height);
     }
 
-    function setView() {
-        if (this.id == "viewProf") {
-            var canv = document.getElementById("canvas");
-            var ctrls = document.getElementById("segHctrl");
+    function setView(event) {
+        let canv, ctrls;
+        if (event.target.id === "viewProf") {
+            canv = el("canvas");
+            ctrls = el("segHctrl");
         }
-        else if (this.id == "viewRing") {
-            var canv = document.getElementById("canvas2");
-            var ctrls = document.getElementById("segNctrl");
+        else if (event.target.id === "viewRing") {
+            canv = el("canvas2");
+            ctrls = el("segNctrl");
         } else {
-            var canv = document.getElementById("canvas3d");
-            var ctrls = '';
+            canv = el("canvas3d");
+            ctrls = '';
         }
 
-        if (this.checked) {
+        if (event.target.checked) {
             canv.style.display = "inline";
             if (ctrls != null && ctrls != '') { ctrls.style.visibility = "visible"; }
         } else {
@@ -648,41 +635,41 @@ import * as PERSISTENCE from './persistence.mjs';
     }
 
     function setUnit() {
-        document.getElementById("inch").checked = ctrl.inch
-        document.getElementById("mm").checked = !ctrl.inch
+        el("inch").checked = ctrl.inch
+        el("mm").checked = !ctrl.inch
     }
 
     function unitChange() {
-        var thick = document.getElementById("inptThick");
-        var pad = document.getElementById("inptPad");
-        if (document.getElementById("inch").checked) {
+        const thick = el("inptThick");
+        const pad = el("inptPad");
+        if (el("inch").checked) {
             ctrl.inch = true;
             ctrl.step = 1 / 16;
             bowlprop.thick = roundTo(bowlprop.thick, 16);
             bowlprop.pad = roundTo(bowlprop.pad, 16);
-            for (var p in bowlprop.rings) {
+            for (const p in bowlprop.rings) {
                 bowlprop.rings[p].height = roundTo(bowlprop.rings[p].height, 16);
             }
             thick.setAttribute("step", 1 / 16);
             thick.value = bowlprop.thick;
             pad.setAttribute("step", 1 / 16);
             pad.value = bowlprop.pad;
-            document.getElementById("rptprec").style.visibility = "visible";
-            document.getElementById("zoomTxt").innerHTML = 'View: ' + (view2d.canvasinches).toFixed(0).concat('"');
+            el("rptprec").style.visibility = "visible";
+            el("zoomTxt").innerHTML = 'View: ' + (view2d.canvasinches).toFixed(0).concat('"');
         } else {
             ctrl.inch = false;
             ctrl.step = 0.5 / 25.4;
             bowlprop.thick = roundTo(bowlprop.thick * 25.4, 2) / 25.4;
             bowlprop.pad = roundTo(bowlprop.pad * 25.4, 2) / 25.4;
-            for (var p in bowlprop.rings) {
+            for (const p in bowlprop.rings) {
                 bowlprop.rings[p].height = roundTo(bowlprop.rings[p].height * 25.4, 2) / 25.4;
             }
             thick.setAttribute("step", 0.5 / 25.4);
             thick.setAttribute("value", bowlprop.thick);
             pad.setAttribute("step", 0.5 / 25.4);
             pad.setAttribute("value", bowlprop.pad);
-            document.getElementById("rptprec").style.visibility = "hidden";
-            document.getElementById("zoomTxt").innerHTML = 'View: ' + (view2d.canvasinches * 2.54).toFixed(0).concat(' cm');
+            el("rptprec").style.visibility = "hidden";
+            el("zoomTxt").innerHTML = 'View: ' + (view2d.canvasinches * 2.54).toFixed(0).concat(' cm');
         }
         thickChange();
         padChange();
@@ -693,42 +680,43 @@ import * as PERSISTENCE from './persistence.mjs';
 
     function loadSawKerf() {
         if (ctrl.inch) {
-            document.getElementById("sawkerf").value = ctrl.sawkerf;
+            el("sawkerf").value = ctrl.sawkerf;
         } else {
-            document.getElementById("sawkerf").value = (ctrl.sawkerf * 25.4).toFixed(3);
+            el("sawkerf").value = (ctrl.sawkerf * 25.4).toFixed(3);
         }
     }
 
     function saveSawKerf() {
         if (ctrl.inch) {
-            ctrl.sawkerf = document.getElementById("sawkerf").value;
+            ctrl.sawkerf = el("sawkerf").value;
         } else {
-            ctrl.sawkerf = (document.getElementById("sawkerf").value / 25.4).toFixed(3);
+            ctrl.sawkerf = (el("sawkerf").value / 25.4).toFixed(3);
         }
         loadSawKerf();
     }
 
-    function zoom() {
+    function zoom(event) {
+        let inc, mult, unit;
         if (ctrl.inch) {
-            var inc = 1;
-            var mult = 1;
-            var unit = '"';
+            inc = 1;
+            mult = 1;
+            unit = '"';
         } else {
-            var inc = 10 / 25.4; // 1cm?
-            var mult = 2.54;
-            var unit = ' cm';
+            inc = 10 / 25.4; // 1cm?
+            mult = 2.54;
+            unit = ' cm';
         }
-        if (this.id == "zoomIn") { inc = -inc; }
-        if (this.id == "zoomIn" && view2d.canvasinches <= 2) { return; }
-        var oldcp = screenToReal(view2d, bowlprop);
+        if (event.target.id === "zoomIn") { inc = -inc; }
+        if (event.target.id === "zoomIn" && view2d.canvasinches <= 2) { return; }
+        const oldcp = screenToReal(view2d, bowlprop);
 
         view2d.canvasinches += inc;
         view2d.scale = view2d.ctx.canvas.width / view2d.canvasinches;
         view2d.bottom = view2d.canvas.height - 0.5 * view2d.scale;
         view2d.centerx = view2d.canvas.width / 2;
-        document.getElementById("zoomTxt").innerHTML = 'View: ' + (view2d.canvasinches * mult).toFixed(0).concat(unit);
+        el("zoomTxt").innerHTML = 'View: ' + (view2d.canvasinches * mult).toFixed(0).concat(unit);
 
-        for (var p in oldcp) {
+        for (const p in oldcp) {
             bowlprop.cpoint[p] = realToScreen(view2d, oldcp[p].x, oldcp[p].y);
         }
         drawCanvas();
@@ -739,16 +727,16 @@ import * as PERSISTENCE from './persistence.mjs';
     }
 
     function resizeWindow() {
-        var oldcp = screenToReal(view2d, bowlprop);
-        var cnt = 0;
-        if (document.getElementById("canvas").style.display != "none") { cnt++; }
-        if (document.getElementById("canvas2").style.display != "none") { cnt++; }
-        if (document.getElementById("canvas3d").style.display != "none") { cnt++; }
+        const oldcp = screenToReal(view2d, bowlprop);
+        let cnt = 0;
+        if (el("canvas").style.display != "none") { cnt++; }
+        if (el("canvas2").style.display != "none") { cnt++; }
+        if (el("canvas3d").style.display != "none") { cnt++; }
         if (cnt > 0) {
             if (cnt > 1) {
-                view2d.ctx.canvas.width = (window.innerWidth - document.getElementById("left").clientWidth) / cnt - 15;
+                view2d.ctx.canvas.width = (window.innerWidth - el("left").clientWidth) / cnt - 15;
             } else {
-                view2d.ctx.canvas.width = Math.min(document.getElementById("left").clientHeight, window.innerWidth - document.getElementById("left").clientWidth - 15);
+                view2d.ctx.canvas.width = Math.min(el("left").clientHeight, window.innerWidth - el("left").clientWidth - 15);
             }
             view2d.ctx.canvas.height = view2d.ctx.canvas.width;
             view2d.ctx2.canvas.width = view2d.ctx.canvas.width;
@@ -759,7 +747,7 @@ import * as PERSISTENCE from './persistence.mjs';
 
             view3d.renderer.setSize(view2d.ctx.canvas.width, view2d.ctx.canvas.height);
             view3d.camera.updateProjectionMatrix();
-            for (var p in oldcp) {
+            for (const p in oldcp) {
                 bowlprop.cpoint[p] = realToScreen(view2d, oldcp[p].x, oldcp[p].y);
             }
             drawCanvas();
@@ -768,13 +756,13 @@ import * as PERSISTENCE from './persistence.mjs';
     }
 
     function updateRingInfo() {
-        if (document.getElementById("canvas2").style.display != "none" && ctrl.selring != null) {
-            var step = 1 / parseInt(document.getElementById("rptfmt").value);
-            var txt = ["Ring:", ctrl.selring.toString(), "<br>",
+        if (el("canvas2").style.display != "none" && ctrl.selring != null) {
+            const step = 1 / parseInt(el("rptfmt").value);
+            let txt = ["Ring:", ctrl.selring.toString(), "<br>",
                 "Diameter:", reduce(bowlprop.rings[ctrl.selring].xvals.max * 2, step), "<br>",
                 "Thickness:", reduce(bowlprop.rings[ctrl.selring].height, step), '<br><hr align="left" width="20%">'];
-            var seglist = getReportSegsList(bowlprop, ctrl.selring);
-            for (var seg = 0; seg < seglist.length; seg++) {
+            const seglist = getReportSegsList(bowlprop, ctrl.selring);
+            for (let seg = 0; seg < seglist.length; seg++) {
                 txt = txt.concat([
                     "Segments:", seglist[seg].cnt, "<br>",
                     "&nbsp;Wood:", capitalize(seglist[seg].wood), "<br>",
@@ -787,20 +775,20 @@ import * as PERSISTENCE from './persistence.mjs';
                     '<hr align="left" width="20%">'
                 ]);
             }
-            document.getElementById("report").innerHTML = txt.join(" ");
+            el("report").innerHTML = txt.join(" ");
         } else {
-            document.getElementById("report").innerHTML = "";
+            el("report").innerHTML = "";
         }
     }
 
     function genReport() {
-        var step = 1 / parseInt(document.getElementById("rptfmt").value);
-        var nwindow = window.open('report.html', 'Report', 'height=800,width=1000');
+        const step = 1 / parseInt(el("rptfmt").value);
+        const nwindow = window.open('report.html', 'Report', 'height=800,width=1000');
         createReport(nwindow, bowlprop, step, ctrl, view2d, view3d, style);
     }
 
     function getWoodByColor(clr) {
-        var woodByColorMap = new Map();
+        const woodByColorMap = new Map();
         woodByColorMap.set('rgb(226, 202, 160)', 'maple');  //#E2CAA0
         woodByColorMap.set('rgb(173, 116, 63)', 'beech');   //#AD743F
         woodByColorMap.set('rgb(153, 80, 24)', 'cherry');   //#995018
@@ -817,27 +805,27 @@ import * as PERSISTENCE from './persistence.mjs';
     }
 
     function showPalette() {
-        var woodcolors = [
+        const woodcolors = [
             '#FDFAF4', '#E2CAA0', '#C29A1F', '#C98753', '#AC572F', '#995018', '#7B4F34',
             '#6E442E', '#623329', '#51240D', '#EFEBE0', '#EFB973', '#AD743F', '#965938',
             '#884B2F', '#7C3826', '#843E4B', '#582824', '#44252B', '#342022'
         ];
-        var brightcolors = [
+        const brightcolors = [
             "#FF0000", "#FF8000", "#FFFF00", "#80FF00", "#00FF80", "#00FFFF", "#0080FF",
             "#0000FF", "#FF00FF", "#800040", "#FF6666", "#FFCC66", "#FFFF66", "#CCFF66",
             "#66FF66", "#66FFCC", "#66CCFF", "#6666FF", "#CC66FF", "#000000"
         ];
 
-        document.getElementById("colortype").onchange =
-            function () {
-                var clist = [];
-                if (this.value == "wood") {
+        el("colortype").onchange =
+            function (event) {
+                let clist;
+                if (event.target.value === "wood") {
                     clist = woodcolors;
                 } else {
                     clist = brightcolors;
                 }
-                var buttons = document.getElementsByClassName("clrsel");
-                for (var i in clist) {
+                const buttons = document.getElementsByClassName("clrsel");
+                for (const i in clist) {
                     buttons[i].style.backgroundColor = clist[i];
                 }
             };
@@ -852,16 +840,15 @@ import * as PERSISTENCE from './persistence.mjs';
 
         function dropclr(ev) {
             ev.preventDefault();
-            var clr = ev.dataTransfer.getData("text");
+            const clr = ev.dataTransfer.getData("text");
             ev.target.style.backgroundColor = clr;
         }
 
-        document.getElementById("colorselect").innerHTML = "";
-        var div;
-        var clropts = document.createElement("p");
-        for (var i in woodcolors) {
+        el("colorselect").innerHTML = "";
+        const clropts = document.createElement("p");
+        for (const i in woodcolors) {
             if (i == woodcolors.length / 2) { clropts.appendChild(document.createElement("br")); }
-            var c = document.createElement("span");
+            const c = document.createElement("span");
             c.className = "clrsel";
             c.style.backgroundColor = woodcolors[i];
             c.draggable = "true";
@@ -869,48 +856,48 @@ import * as PERSISTENCE from './persistence.mjs';
             clropts.appendChild(c);
         }
 
-        var btnpalette = document.getElementsByClassName("clrbtn");
-        var palette = document.createElement("p");
+        const btnpalette = document.getElementsByClassName("clrbtn");
+        const palette = document.createElement("p");
         palette.appendChild(document.createElement("hr"));
         palette.appendChild(document.createTextNode("Palette: "));
-        for (var i = 0; i < btnpalette.length; i++) {
-            var c = document.createElement("span");
+        for (let i = 0; i < btnpalette.length; i++) {
+            const c = document.createElement("span");
             c.className = "tmppal";
             c.style.backgroundColor = btnpalette[i].style.backgroundColor;
             c.ondragover = dragover;
             c.ondrop = dropclr;
             palette.appendChild(c);
         }
-        document.getElementById("colorselect").appendChild(clropts);
-        document.getElementById("colorselect").appendChild(palette);
-        document.getElementById("palettewindow").style.display = "block";
+        el("colorselect").appendChild(clropts);
+        el("colorselect").appendChild(palette);
+        el("palettewindow").style.display = "block";
     }
 
     document.getElementsByClassName("close")[0].onclick = function () {
-        var btnpalette = document.getElementsByClassName("clrbtn");
-        var tmppalette = document.getElementsByClassName("tmppal");
-        for (var i = 0; i < btnpalette.length; i++) {
+        const btnpalette = document.getElementsByClassName("clrbtn");
+        const tmppalette = document.getElementsByClassName("tmppal");
+        for (let i = 0; i < btnpalette.length; i++) {
             btnpalette[i].style.backgroundColor = tmppalette[i].style.backgroundColor;
             btnpalette[i].title = getWoodByColor(tmppalette[i].style.backgroundColor);
         }
-        document.getElementById("palettewindow").style.display = "none";
+        el("palettewindow").style.display = "none";
     };
 
     function about() {
-        var user = "developer";
-        var domain = "collindelker.com";
-        document.getElementById("contact").innerHTML = user + '@' + domain;
-        document.getElementById("version").innerHTML = 'Version ' + version;
-        document.getElementById("aboutwindow").style.display = "block";
+        const user = "developer";
+        const domain = "collindelker.com";
+        el("contact").innerHTML = user + '@' + domain;
+        el("version").innerHTML = 'Version ' + version;
+        el("aboutwindow").style.display = "block";
         document.getElementsByClassName("close")[1].onclick = function () {
-            document.getElementById("aboutwindow").style.display = "none";
+            el("aboutwindow").style.display = "none";
         };
     }
 
     function save() {
         PERSISTENCE.saveDesignAndSettings(bowlprop, ctrl);
         checkStorage();
-        document.getElementById("loaddesign").disabled = false;
+        el("loaddesign").disabled = false;
     }
 
     function load() {
@@ -931,24 +918,24 @@ import * as PERSISTENCE from './persistence.mjs';
 
     function checkStorage() {
         if (PERSISTENCE.checkStorage() !== null) {
-            var timestamp = PERSISTENCE.checkStorage();
-            document.getElementById("storageinfo").innerHTML = "Design saved from " + timestamp;
+            const timestamp = PERSISTENCE.checkStorage();
+            el("storageinfo").innerHTML = "Design saved from " + timestamp;
         } else {
-            document.getElementById("storageinfo").innerHTML = "no design in storage";
-            document.getElementById("loaddesign").disabled = true;
+            el("storageinfo").innerHTML = "no design in storage";
+            el("loaddesign").disabled = true;
         }
     }
 
 
     // Main
-    view2d.canvas = document.getElementById("canvas");
+    view2d.canvas = el("canvas");
     view2d.ctx = view2d.canvas.getContext("2d");
-    view2d.canvas2 = document.getElementById("canvas2");
+    view2d.canvas2 = el("canvas2");
     view2d.ctx2 = view2d.canvas2.getContext("2d");
 
-    view2d.ctx.canvas.width = (window.innerWidth - document.getElementById("left").clientWidth) / 3 - 15;
+    view2d.ctx.canvas.width = (window.innerWidth - el("left").clientWidth) / 3 - 15;
     view2d.ctx.canvas.height = view2d.ctx.canvas.width;
-    view2d.ctx2.canvas.width = (window.innerWidth - document.getElementById("left").clientWidth) / 3 - 15;
+    view2d.ctx2.canvas.width = (window.innerWidth - el("left").clientWidth) / 3 - 15;
     view2d.ctx2.canvas.height = view2d.ctx2.canvas.width;
     view2d.scale = view2d.ctx.canvas.width / view2d.canvasinches;
     init();

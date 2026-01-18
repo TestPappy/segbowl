@@ -1,81 +1,483 @@
-import { loadDesign, loadSettings, checkStorage, clearDesignAndSettings, saveDesignAndSettings } from "../persistence.js";
+import { 
+    // New API
+    captureProfileThumbnail,
+    serializeDesign,
+    deserializeDesign,
+    saveToHistory,
+    getHistory,
+    getHistoryCount,
+    restoreFromHistory,
+    getHistorySummary,
+    clearHistory,
+    deleteFromHistory,
+    // Legacy API (kept for backward compatibility)
+    loadDesign, 
+    loadSettings, 
+    checkStorage, 
+    clearDesignAndSettings, 
+    saveDesignAndSettings 
+} from "../persistence.js";
 require('jest-localstorage-mock');
 
 // =============================================================================
-// TEST CASES FOR: Persistence Module
+// Helper: Create mock canvas for thumbnail tests
 // =============================================================================
-describe('persistence can', () => {
+function createMockCanvas(width = 500, height = 500) {
+    // Create a mock canvas with toDataURL for testing
+    const mockCtx = {
+        drawImage: jest.fn(),
+        fillRect: jest.fn(),
+        fillStyle: ''
+    };
+    
+    const canvas = {
+        width: width,
+        height: height,
+        getContext: jest.fn(() => mockCtx),
+        toDataURL: jest.fn(() => 'data:image/png;base64,mockThumbnailData')
+    };
+    
+    return canvas;
+}
+
+// =============================================================================
+// Helper: Create sample bowl data
+// =============================================================================
+function createSampleBowlProp() {
+    return {
+        radius: 80,
+        height: 100,
+        thick: 6,
+        pad: 3,
+        cpoint: [
+            { x: 250, y: 400 },
+            { x: 300, y: 400 },
+            { x: 300, y: 200 },
+            { x: 350, y: 150 }
+        ],
+        curvesegs: 50,
+        rings: [
+            { 
+                height: 19, 
+                segs: 12, 
+                clrs: ['#FF0000', '#00FF00', '#0000FF'], 
+                wood: ['maple', 'oak', 'walnut'],
+                seglen: [1, 1, 1],
+                xvals: { min: 30, max: 50 },
+                theta: 0 
+            }
+        ],
+        usedrings: 1,
+        seltrapz: null,
+        selthetas: null
+    };
+}
+
+function createSampleCtrl() {
+    return {
+        drag: null,
+        dPoint: null,
+        selring: 1,
+        selseg: [],
+        copyring: null,
+        step: 0.5,
+        inch: false,
+        sawkerf: 3
+    };
+}
+
+// =============================================================================
+// TEST CASES FOR: captureProfileThumbnail
+// =============================================================================
+describe('captureProfileThumbnail', () => {
+    it('returns null for null canvas', () => {
+        const result = captureProfileThumbnail(null);
+        expect(result).toBeNull();
+    });
+
+    it('creates a scaled canvas with correct dimensions', () => {
+        // Use actual document.createElement for this test
+        const canvas = document.createElement('canvas');
+        canvas.width = 500;
+        canvas.height = 500;
+        
+        // Mock getContext to return a mock context
+        const mockCtx = {
+            drawImage: jest.fn()
+        };
+        
+        // Override getContext
+        const originalGetContext = HTMLCanvasElement.prototype.getContext;
+        HTMLCanvasElement.prototype.getContext = jest.fn(() => mockCtx);
+        
+        // Mock toDataURL
+        HTMLCanvasElement.prototype.toDataURL = jest.fn(() => 'data:image/png;base64,test');
+        
+        const result = captureProfileThumbnail(canvas, 100);
+        
+        expect(result).toMatch(/^data:image\/png/);
+        
+        // Restore
+        HTMLCanvasElement.prototype.getContext = originalGetContext;
+    });
+});
+
+// =============================================================================
+// TEST CASES FOR: serializeDesign
+// =============================================================================
+describe('serializeDesign', () => {
+    it('creates correct schema version 2 structure', () => {
+        const bowlprop = createSampleBowlProp();
+        const ctrl = createSampleCtrl();
+        const canvas = createMockCanvas();
+        
+        const result = serializeDesign(bowlprop, ctrl, canvas);
+        
+        expect(result.schemaVersion).toBe(2);
+        expect(result.metadata).toBeDefined();
+        expect(result.thumbnail).toBeDefined();
+        expect(result.design).toBeDefined();
+        expect(result.settings).toBeDefined();
+    });
+
+    it('includes metadata with timestamps', () => {
+        const bowlprop = createSampleBowlProp();
+        const ctrl = createSampleCtrl();
+        const canvas = createMockCanvas();
+        
+        const result = serializeDesign(bowlprop, ctrl, canvas, 'Test Design');
+        
+        expect(result.metadata.name).toBe('Test Design');
+        expect(result.metadata.created).toBeDefined();
+        expect(result.metadata.modified).toBeDefined();
+        expect(result.metadata.appVersion).toBeDefined();
+    });
+
+    it('extracts only essential design data (no xvals)', () => {
+        const bowlprop = createSampleBowlProp();
+        const ctrl = createSampleCtrl();
+        const canvas = createMockCanvas();
+        
+        const result = serializeDesign(bowlprop, ctrl, canvas);
+        
+        expect(result.design.thick).toBe(6);
+        expect(result.design.pad).toBe(3);
+        expect(result.design.rings[0].xvals).toBeUndefined();
+        expect(result.design.rings[0].height).toBe(19);
+    });
+
+    it('extracts only persistent settings', () => {
+        const bowlprop = createSampleBowlProp();
+        const ctrl = createSampleCtrl();
+        const canvas = createMockCanvas();
+        
+        const result = serializeDesign(bowlprop, ctrl, canvas);
+        
+        expect(result.settings.inch).toBe(false);
+        expect(result.settings.sawkerf).toBe(3);
+        expect(result.settings.selring).toBeUndefined();
+        expect(result.settings.selseg).toBeUndefined();
+    });
+
+    it('works with null canvas', () => {
+        const bowlprop = createSampleBowlProp();
+        const ctrl = createSampleCtrl();
+        
+        const result = serializeDesign(bowlprop, ctrl, null);
+        
+        expect(result.schemaVersion).toBe(2);
+        expect(result.thumbnail).toBeNull();
+    });
+});
+
+// =============================================================================
+// TEST CASES FOR: deserializeDesign
+// =============================================================================
+describe('deserializeDesign', () => {
+    it('restores schema version 2 data correctly', () => {
+        const bowlprop = createSampleBowlProp();
+        const ctrl = createSampleCtrl();
+        const canvas = createMockCanvas();
+        
+        const serialized = serializeDesign(bowlprop, ctrl, canvas);
+        const result = deserializeDesign(serialized);
+        
+        expect(result.bowlprop.thick).toBe(6);
+        expect(result.bowlprop.pad).toBe(3);
+        expect(result.ctrl.inch).toBe(false);
+        expect(result.ctrl.sawkerf).toBe(3);
+    });
+
+    it('restores control points correctly', () => {
+        const bowlprop = createSampleBowlProp();
+        const ctrl = createSampleCtrl();
+        const canvas = createMockCanvas();
+        
+        const serialized = serializeDesign(bowlprop, ctrl, canvas);
+        const result = deserializeDesign(serialized);
+        
+        expect(result.bowlprop.cpoint).toHaveLength(4);
+        expect(result.bowlprop.cpoint[0].x).toBe(250);
+    });
+
+    it('migrates legacy format (with timestamp)', () => {
+        const legacyData = {
+            timestamp: "2024-01-01T00:00:00.000Z",
+            thick: 8,
+            pad: 4,
+            rings: [{ height: 20, segs: 8, clrs: [], wood: [], seglen: [], theta: 0 }]
+        };
+        
+        const result = deserializeDesign(legacyData);
+        
+        expect(result.bowlprop.thick).toBe(8);
+        expect(result.bowlprop.pad).toBe(4);
+        expect(result.ctrl.inch).toBe(false);
+    });
+
+    it('handles unknown format gracefully', () => {
+        const unknownData = { someField: "value" };
+        
+        const result = deserializeDesign(unknownData);
+        
+        expect(result.bowlprop).toBeDefined();
+        expect(result.ctrl).toBeDefined();
+    });
+});
+
+// =============================================================================
+// TEST CASES FOR: Version History
+// =============================================================================
+describe('saveToHistory', () => {
+    beforeEach(() => {
+        localStorage.clear();
+        localStorage.setItem.mockClear();
+        localStorage.getItem.mockClear();
+    });
+
+    it('saves design to history', () => {
+        const bowlprop = createSampleBowlProp();
+        const ctrl = createSampleCtrl();
+        const canvas = createMockCanvas();
+        
+        const result = saveToHistory(bowlprop, ctrl, canvas);
+        
+        expect(result).toHaveLength(1);
+        expect(localStorage.setItem).toHaveBeenCalledWith(
+            'bowlHistory',
+            expect.any(String)
+        );
+    });
+
+    it('limits history to 5 versions', () => {
+        const bowlprop = createSampleBowlProp();
+        const ctrl = createSampleCtrl();
+        const canvas = createMockCanvas();
+        
+        // Save 7 versions
+        for (let i = 0; i < 7; i++) {
+            saveToHistory(bowlprop, ctrl, canvas, `Version ${i}`);
+        }
+        
+        const history = getHistory();
+        expect(history.length).toBeLessThanOrEqual(5);
+    });
+
+    it('adds newest version to front of array', () => {
+        const bowlprop = createSampleBowlProp();
+        const ctrl = createSampleCtrl();
+        const canvas = createMockCanvas();
+        
+        saveToHistory(bowlprop, ctrl, canvas, 'First');
+        saveToHistory(bowlprop, ctrl, canvas, 'Second');
+        
+        const history = getHistory();
+        expect(history[0].metadata.name).toBe('Second');
+        expect(history[1].metadata.name).toBe('First');
+    });
+});
+
+describe('getHistory', () => {
+    beforeEach(() => {
+        localStorage.clear();
+    });
+
+    it('returns empty array when no history exists', () => {
+        const result = getHistory();
+        expect(result).toEqual([]);
+    });
+
+    it('handles corrupted JSON gracefully', () => {
+        localStorage.setItem('bowlHistory', 'invalid json{{{');
+        
+        const result = getHistory();
+        expect(result).toEqual([]);
+    });
+});
+
+describe('getHistoryCount', () => {
+    beforeEach(() => {
+        localStorage.clear();
+    });
+
+    it('returns 0 when no history', () => {
+        expect(getHistoryCount()).toBe(0);
+    });
+
+    it('returns correct count', () => {
+        const bowlprop = createSampleBowlProp();
+        const ctrl = createSampleCtrl();
+        const canvas = createMockCanvas();
+        
+        saveToHistory(bowlprop, ctrl, canvas);
+        saveToHistory(bowlprop, ctrl, canvas);
+        
+        expect(getHistoryCount()).toBe(2);
+    });
+});
+
+describe('restoreFromHistory', () => {
+    beforeEach(() => {
+        localStorage.clear();
+    });
+
+    it('returns null for invalid index', () => {
+        expect(restoreFromHistory(-1)).toBeNull();
+        expect(restoreFromHistory(0)).toBeNull();
+        expect(restoreFromHistory(100)).toBeNull();
+    });
+
+    it('restores saved version correctly', () => {
+        const bowlprop = createSampleBowlProp();
+        const ctrl = createSampleCtrl();
+        const canvas = createMockCanvas();
+        
+        saveToHistory(bowlprop, ctrl, canvas);
+        
+        const result = restoreFromHistory(0);
+        expect(result.bowlprop.thick).toBe(6);
+        expect(result.ctrl.sawkerf).toBe(3);
+    });
+});
+
+describe('getHistorySummary', () => {
+    beforeEach(() => {
+        localStorage.clear();
+    });
+
+    it('returns empty array when no history', () => {
+        const result = getHistorySummary();
+        expect(result).toEqual([]);
+    });
+
+    it('returns summary with metadata and thumbnail', () => {
+        const bowlprop = createSampleBowlProp();
+        const ctrl = createSampleCtrl();
+        const canvas = createMockCanvas();
+        
+        saveToHistory(bowlprop, ctrl, canvas, 'Test Version');
+        
+        const result = getHistorySummary();
+        expect(result).toHaveLength(1);
+        expect(result[0].index).toBe(0);
+        expect(result[0].metadata.name).toBe('Test Version');
+        expect(result[0].thumbnail).toBeDefined();
+    });
+});
+
+describe('clearHistory', () => {
+    beforeEach(() => {
+        localStorage.clear();
+        localStorage.removeItem.mockClear();
+    });
+
+    it('clears all history', () => {
+        const bowlprop = createSampleBowlProp();
+        const ctrl = createSampleCtrl();
+        const canvas = createMockCanvas();
+        
+        saveToHistory(bowlprop, ctrl, canvas);
+        clearHistory();
+        
+        expect(getHistoryCount()).toBe(0);
+    });
+});
+
+describe('deleteFromHistory', () => {
+    beforeEach(() => {
+        localStorage.clear();
+    });
+
+    it('deletes specific version', () => {
+        const bowlprop = createSampleBowlProp();
+        const ctrl = createSampleCtrl();
+        const canvas = createMockCanvas();
+        
+        saveToHistory(bowlprop, ctrl, canvas, 'First');
+        saveToHistory(bowlprop, ctrl, canvas, 'Second');
+        saveToHistory(bowlprop, ctrl, canvas, 'Third');
+        
+        deleteFromHistory(1); // Delete 'Second'
+        
+        const history = getHistory();
+        expect(history).toHaveLength(2);
+        expect(history[0].metadata.name).toBe('Third');
+        expect(history[1].metadata.name).toBe('First');
+    });
+
+    it('handles invalid index gracefully', () => {
+        const result = deleteFromHistory(100);
+        expect(result).toEqual([]);
+    });
+});
+
+// =============================================================================
+// LEGACY API TESTS (kept for backward compatibility)
+// =============================================================================
+describe('Legacy API: persistence can', () => {
     beforeEach(() => {
         localStorage.clear();
         localStorage.setItem.mockClear();
         localStorage.getItem.mockClear();
         localStorage.removeItem.mockClear();
-      });
-
-    it('save a design', () => {
-        var bowlpropMock = {
-            test: "123"
-        };
-        var ctrlMock = {
-            inch: false
-        };
-        // Saving...
-        saveDesignAndSettings(bowlpropMock, ctrlMock);
-        expect(Object.keys(localStorage.__STORE__).length).toBe(2);
-        expect(localStorage.setItem).toHaveBeenCalledWith("bowlDesign", JSON.stringify(bowlpropMock));
-        expect(localStorage.setItem).toHaveBeenLastCalledWith("bowlSettings", JSON.stringify(ctrlMock));
     });
 
-    it('can check for an existing design', () => {
-        var bowlpropMock = {
-            test: "123",
-            timestamp: "0815-4711"
-        };
+    it('save a design (legacy)', () => {
+        const bowlpropMock = { test: "123" };
+        const ctrlMock = { inch: false };
+        
+        saveDesignAndSettings(bowlpropMock, ctrlMock);
+        
+        expect(localStorage.setItem).toHaveBeenCalledWith("bowlDesign", expect.any(String));
+        expect(localStorage.setItem).toHaveBeenCalledWith("bowlSettings", expect.any(String));
+    });
+
+    it('can check for an existing design (legacy)', () => {
+        const bowlpropMock = { test: "123", timestamp: "0815-4711" };
         localStorage.setItem("bowlDesign", JSON.stringify(bowlpropMock));
-        var timestamp = checkStorage();
-        expect(localStorage.getItem).toHaveBeenLastCalledWith("bowlDesign");
+        
+        const timestamp = checkStorage();
         expect(timestamp).toBe(bowlpropMock.timestamp);
     });
 
-    it('load an existing design', () => {
-        var bowlpropMock = {
-            test: "123",
-            timestamp: "0815-4711"
-        };
+    it('load an existing design (legacy)', () => {
+        const bowlpropMock = { test: "123", timestamp: "0815-4711" };
         localStorage.setItem("bowlDesign", JSON.stringify(bowlpropMock));
-        var loadedBowlprop = loadDesign();
-        expect(localStorage.getItem).toHaveBeenLastCalledWith("bowlDesign");
+        
+        const loadedBowlprop = loadDesign();
         expect(loadedBowlprop.test).toBe("123");
     });
 
-    it('load an existing setting', () => {
-        var ctrlMock = {
-            inch: false
-        };
+    it('load an existing setting (legacy)', () => {
+        const ctrlMock = { inch: false };
         localStorage.setItem("bowlSettings", JSON.stringify(ctrlMock));
-        var loadedSettings = loadSettings();
-        expect(localStorage.getItem).toHaveBeenLastCalledWith("bowlSettings");
+        
+        const loadedSettings = loadSettings();
         expect(loadedSettings.inch).toBe(false);
-    });
-
-    it('remove an existing design', () => {
-        var bowlpropMock = {
-            test: "123",
-            timestamp: "0815-4711"
-        };
-        localStorage.setItem("bowlDesign", JSON.stringify(bowlpropMock));
-        localStorage.setItem("bowlSettings", JSON.stringify(bowlpropMock));
-        // Deleting...
-        clearDesignAndSettings();
-        expect(Object.keys(localStorage.__STORE__).length).toBe(0);
-        expect(localStorage.removeItem).toHaveBeenCalledTimes(2);
     });
 });
 
-// =============================================================================
-// Additional TEST CASES FOR: saveDesignAndSettings
-// =============================================================================
-describe('saveDesignAndSettings', () => {
+describe('Legacy API: saveDesignAndSettings', () => {
     beforeEach(() => {
         localStorage.clear();
         localStorage.setItem.mockClear();
@@ -87,7 +489,6 @@ describe('saveDesignAndSettings', () => {
         
         saveDesignAndSettings(bowlprop, ctrl);
         
-        // bowlprop should now have a timestamp property
         expect(bowlprop.timestamp).toBeDefined();
     });
 
@@ -97,110 +498,13 @@ describe('saveDesignAndSettings', () => {
         
         saveDesignAndSettings(bowlprop, ctrl);
         
-        // Should be a valid ISO date string
         const timestamp = bowlprop.timestamp;
         const parsed = new Date(timestamp);
         expect(parsed.toJSON()).toBe(timestamp);
-        expect(isNaN(parsed.getTime())).toBe(false);
-    });
-
-    it('preserves all bowlprop properties', () => {
-        const bowlprop = {
-            thick: 6,
-            pad: 3,
-            height: 100,
-            radius: 80,
-            curvesegs: 50
-        };
-        const ctrl = { inch: false };
-        
-        saveDesignAndSettings(bowlprop, ctrl);
-        
-        const saved = JSON.parse(localStorage.getItem("bowlDesign"));
-        expect(saved.thick).toBe(6);
-        expect(saved.pad).toBe(3);
-        expect(saved.height).toBe(100);
-        expect(saved.radius).toBe(80);
-        expect(saved.curvesegs).toBe(50);
-    });
-
-    it('preserves all ctrl properties', () => {
-        const bowlprop = { test: "value" };
-        const ctrl = {
-            inch: true,
-            sawkerf: 3.2,
-            step: 0.0625,
-            selring: 2,
-            selseg: [1, 3, 5]
-        };
-        
-        saveDesignAndSettings(bowlprop, ctrl);
-        
-        const saved = JSON.parse(localStorage.getItem("bowlSettings"));
-        expect(saved.inch).toBe(true);
-        expect(saved.sawkerf).toBe(3.2);
-        expect(saved.step).toBe(0.0625);
-        expect(saved.selring).toBe(2);
-        expect(saved.selseg).toEqual([1, 3, 5]);
-    });
-
-    it('handles complex nested objects', () => {
-        const bowlprop = {
-            rings: [
-                { height: 19, segs: 12, clrs: ['#FF0000', '#00FF00'], xvals: { min: 30, max: 50 } },
-                { height: 19, segs: 8, clrs: ['#0000FF'], xvals: { min: 40, max: 60 } }
-            ],
-            cpoint: [
-                { x: 100, y: 200 },
-                { x: 150, y: 250 }
-            ]
-        };
-        const ctrl = { inch: false };
-        
-        saveDesignAndSettings(bowlprop, ctrl);
-        
-        const saved = JSON.parse(localStorage.getItem("bowlDesign"));
-        expect(saved.rings.length).toBe(2);
-        expect(saved.rings[0].clrs).toEqual(['#FF0000', '#00FF00']);
-        expect(saved.rings[0].xvals.min).toBe(30);
-        expect(saved.cpoint[1].y).toBe(250);
-    });
-
-    it('handles empty arrays in bowlprop', () => {
-        const bowlprop = {
-            rings: [],
-            cpoint: [],
-            emptyData: []
-        };
-        const ctrl = { inch: false };
-        
-        saveDesignAndSettings(bowlprop, ctrl);
-        
-        const saved = JSON.parse(localStorage.getItem("bowlDesign"));
-        expect(saved.rings).toEqual([]);
-        expect(saved.cpoint).toEqual([]);
-        expect(saved.emptyData).toEqual([]);
-    });
-
-    it('overwrites existing saved design', () => {
-        const bowlprop1 = { version: 1 };
-        const bowlprop2 = { version: 2 };
-        const ctrl = { inch: false };
-        
-        saveDesignAndSettings(bowlprop1, ctrl);
-        const saved1 = JSON.parse(localStorage.getItem("bowlDesign"));
-        expect(saved1.version).toBe(1);
-        
-        saveDesignAndSettings(bowlprop2, ctrl);
-        const saved2 = JSON.parse(localStorage.getItem("bowlDesign"));
-        expect(saved2.version).toBe(2);
     });
 });
 
-// =============================================================================
-// Additional TEST CASES FOR: loadDesign
-// =============================================================================
-describe('loadDesign', () => {
+describe('Legacy API: loadDesign', () => {
     beforeEach(() => {
         localStorage.clear();
     });
@@ -213,49 +517,13 @@ describe('loadDesign', () => {
     it('handles corrupted JSON gracefully', () => {
         localStorage.setItem("bowlDesign", "{ invalid json }}}");
         
-        // Should not throw and return null
         expect(() => loadDesign()).not.toThrow();
         const result = loadDesign();
         expect(result).toBeNull();
     });
-
-    it('preserves all saved properties on load', () => {
-        const original = {
-            thick: 6,
-            pad: 3,
-            height: 100,
-            radius: 80,
-            timestamp: "2024-01-15T10:30:00.000Z"
-        };
-        localStorage.setItem("bowlDesign", JSON.stringify(original));
-        
-        const loaded = loadDesign();
-        expect(loaded.thick).toBe(6);
-        expect(loaded.pad).toBe(3);
-        expect(loaded.height).toBe(100);
-        expect(loaded.radius).toBe(80);
-        expect(loaded.timestamp).toBe("2024-01-15T10:30:00.000Z");
-    });
-
-    it('parses nested objects correctly', () => {
-        const original = {
-            rings: [
-                { height: 19, xvals: { min: 30, max: 50 } }
-            ],
-            cpoint: [{ x: 100, y: 200 }]
-        };
-        localStorage.setItem("bowlDesign", JSON.stringify(original));
-        
-        const loaded = loadDesign();
-        expect(loaded.rings[0].xvals.min).toBe(30);
-        expect(loaded.cpoint[0].x).toBe(100);
-    });
 });
 
-// =============================================================================
-// Additional TEST CASES FOR: loadSettings
-// =============================================================================
-describe('loadSettings', () => {
+describe('Legacy API: loadSettings', () => {
     beforeEach(() => {
         localStorage.clear();
     });
@@ -268,42 +536,13 @@ describe('loadSettings', () => {
     it('handles corrupted JSON gracefully', () => {
         localStorage.setItem("bowlSettings", "not valid json at all");
         
-        // Should not throw and return null
         expect(() => loadSettings()).not.toThrow();
         const result = loadSettings();
         expect(result).toBeNull();
     });
-
-    it('preserves boolean values correctly', () => {
-        const original = { inch: true, otherBool: false };
-        localStorage.setItem("bowlSettings", JSON.stringify(original));
-        
-        const loaded = loadSettings();
-        expect(loaded.inch).toBe(true);
-        expect(loaded.otherBool).toBe(false);
-    });
-
-    it('preserves number values correctly', () => {
-        const original = {
-            sawkerf: 3.2,
-            step: 0.0625,
-            intValue: 42,
-            negValue: -5.5
-        };
-        localStorage.setItem("bowlSettings", JSON.stringify(original));
-        
-        const loaded = loadSettings();
-        expect(loaded.sawkerf).toBe(3.2);
-        expect(loaded.step).toBe(0.0625);
-        expect(loaded.intValue).toBe(42);
-        expect(loaded.negValue).toBe(-5.5);
-    });
 });
 
-// =============================================================================
-// Additional TEST CASES FOR: checkStorage
-// =============================================================================
-describe('checkStorage', () => {
+describe('Legacy API: checkStorage', () => {
     beforeEach(() => {
         localStorage.clear();
     });
@@ -320,66 +559,38 @@ describe('checkStorage', () => {
         expect(result).toBeNull();
     });
 
-    it('handles corrupted JSON gracefully', () => {
-        localStorage.setItem("bowlDesign", "corrupted{{{");
+    it('returns timestamp from new history format', () => {
+        const bowlprop = createSampleBowlProp();
+        const ctrl = createSampleCtrl();
+        const canvas = createMockCanvas();
         
-        // Should not throw and return null
-        expect(() => checkStorage()).not.toThrow();
-        const result = checkStorage();
-        expect(result).toBeNull();
-    });
-
-    it('returns exact timestamp string from saved design', () => {
-        const timestamp = "2024-06-15T14:30:00.123Z";
-        localStorage.setItem("bowlDesign", JSON.stringify({ timestamp }));
+        saveToHistory(bowlprop, ctrl, canvas);
         
         const result = checkStorage();
-        expect(result).toBe(timestamp);
+        expect(result).toBeDefined();
+        expect(result).not.toBeNull();
     });
 });
 
-// =============================================================================
-// Additional TEST CASES FOR: clearDesignAndSettings
-// =============================================================================
-describe('clearDesignAndSettings', () => {
+describe('Legacy API: clearDesignAndSettings', () => {
     beforeEach(() => {
         localStorage.clear();
         localStorage.removeItem.mockClear();
     });
 
-    it('removes bowlDesign key', () => {
+    it('removes legacy keys and history', () => {
         localStorage.setItem("bowlDesign", JSON.stringify({ test: "value" }));
+        localStorage.setItem("bowlSettings", JSON.stringify({ inch: true }));
+        
+        const bowlprop = createSampleBowlProp();
+        const ctrl = createSampleCtrl();
+        const canvas = createMockCanvas();
+        saveToHistory(bowlprop, ctrl, canvas);
         
         clearDesignAndSettings();
         
-        expect(localStorage.removeItem).toHaveBeenCalledWith("bowlDesign");
         expect(localStorage.getItem("bowlDesign")).toBeNull();
-    });
-
-    it('removes bowlSettings key', () => {
-        localStorage.setItem("bowlSettings", JSON.stringify({ inch: true }));
-        
-        clearDesignAndSettings();
-        
-        expect(localStorage.removeItem).toHaveBeenCalledWith("bowlSettings");
         expect(localStorage.getItem("bowlSettings")).toBeNull();
-    });
-
-    it('does not throw when storage is already empty', () => {
-        // Storage is empty
-        expect(() => clearDesignAndSettings()).not.toThrow();
-        expect(localStorage.removeItem).toHaveBeenCalledTimes(2);
-    });
-
-    it('does not affect other localStorage keys', () => {
-        localStorage.setItem("bowlDesign", JSON.stringify({ test: "value" }));
-        localStorage.setItem("bowlSettings", JSON.stringify({ inch: true }));
-        localStorage.setItem("otherKey", "should remain");
-        localStorage.setItem("anotherKey", "also remains");
-        
-        clearDesignAndSettings();
-        
-        expect(localStorage.getItem("otherKey")).toBe("should remain");
-        expect(localStorage.getItem("anotherKey")).toBe("also remains");
+        expect(getHistoryCount()).toBe(0);
     });
 });

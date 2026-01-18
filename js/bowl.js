@@ -138,9 +138,12 @@ import * as PERSISTENCE from './persistence.js';
         el("mm").onclick = unitChange;
         el("gentable").onclick = genReport;
         el("about").onclick = about;
-        el("loaddesign").onclick = load;
-        el("savedesign").onclick = save;
-        el("cleardesign").onclick = clear;
+        el("exportdesign").onclick = exportDesign;
+        el("importdesign").onclick = () => el("importfile").click();
+        el("importfile").onchange = importDesign;
+        el("saveversion").onclick = saveVersion;
+        el("restoreversion").onclick = showVersionHistory;
+        el("clearversions").onclick = clearVersions;
         el("sawkerf").onchange = saveSawKerf;
         window.addEventListener('resize', resizeWindow);
         const btnclrclass = document.getElementsByClassName("clrbtn");
@@ -177,7 +180,7 @@ import * as PERSISTENCE from './persistence.js';
         /* var axisHelper = new THREE.AxisHelper(5);
         view3d.scene.add(axisHelper);  */
         build3D();
-        checkStorage();
+        updateStorageInfo();
     }
 
     /*======================
@@ -965,35 +968,137 @@ import * as PERSISTENCE from './persistence.js';
         };
     }
 
-    function save() {
-        PERSISTENCE.saveDesignAndSettings(bowlprop, ctrl);
-        checkStorage();
-        el("loaddesign").disabled = false;
+    /*======================
+      File Export/Import
+    ======================*/
+    function exportDesign() {
+        const timestamp = new Date().toISOString().slice(0, 10);
+        const filename = `bowl-design-${timestamp}.json`;
+        PERSISTENCE.exportToFile(bowlprop, ctrl, view2d.canvas, filename);
     }
 
-    function load() {
-        if (PERSISTENCE.checkStorage() !== null) {
-            bowlprop = PERSISTENCE.loadDesign();
-            ctrl = PERSISTENCE.loadSettings();
-        }
-        setUnit();
-        loadSawKerf();
-        drawCanvas();
-        build3D();
+    function importDesign(event) {
+        const file = event.target.files[0];
+        if (!file) return;
+        
+        PERSISTENCE.importFromFile(file)
+            .then(result => {
+                bowlprop = result.bowlprop;
+                ctrl = result.ctrl;
+                setUnit();
+                loadSawKerf();
+                drawCanvas();
+                build3D();
+                // Reset file input so same file can be imported again
+                event.target.value = '';
+            })
+            .catch(err => {
+                alert('Failed to import design: ' + err.message);
+                event.target.value = '';
+            });
     }
 
-    function clear() {
-        PERSISTENCE.clearDesignAndSettings();
-        checkStorage();
+    /*======================
+      Version History
+    ======================*/
+    function saveVersion() {
+        PERSISTENCE.saveToHistory(bowlprop, ctrl, view2d.canvas);
+        updateStorageInfo();
     }
 
-    function checkStorage() {
-        if (PERSISTENCE.checkStorage() !== null) {
-            const timestamp = PERSISTENCE.checkStorage();
-            el("storageinfo").innerHTML = "Design saved from " + timestamp;
+    function showVersionHistory() {
+        const summary = PERSISTENCE.getHistorySummary();
+        const versionList = el("versionlist");
+        versionList.innerHTML = '';
+        
+        if (summary.length === 0) {
+            versionList.innerHTML = '<div class="no-versions">No saved versions</div>';
         } else {
-            el("storageinfo").innerHTML = "no design in storage";
-            el("loaddesign").disabled = true;
+            summary.forEach((item, idx) => {
+                const versionItem = document.createElement('div');
+                versionItem.className = 'version-item';
+                versionItem.onclick = () => restoreVersion(idx);
+                
+                // Thumbnail
+                if (item.thumbnail) {
+                    const img = document.createElement('img');
+                    img.className = 'version-thumbnail';
+                    img.src = item.thumbnail;
+                    img.alt = 'Version thumbnail';
+                    versionItem.appendChild(img);
+                } else {
+                    const placeholder = document.createElement('div');
+                    placeholder.className = 'version-thumbnail-placeholder';
+                    placeholder.textContent = 'No preview';
+                    versionItem.appendChild(placeholder);
+                }
+                
+                // Info
+                const info = document.createElement('div');
+                info.className = 'version-info';
+                
+                const name = document.createElement('div');
+                name.className = 'version-name';
+                name.textContent = item.metadata?.name || `Version ${summary.length - idx}`;
+                info.appendChild(name);
+                
+                const date = document.createElement('div');
+                date.className = 'version-date';
+                if (item.metadata?.modified) {
+                    const d = new Date(item.metadata.modified);
+                    date.textContent = d.toLocaleString();
+                }
+                info.appendChild(date);
+                
+                const details = document.createElement('div');
+                details.className = 'version-details';
+                details.textContent = item.metadata?.appVersion ? `App v${item.metadata.appVersion}` : '';
+                info.appendChild(details);
+                
+                versionItem.appendChild(info);
+                versionList.appendChild(versionItem);
+            });
+        }
+        
+        el("versionwindow").style.display = "block";
+        
+        // Set up close button for version window
+        const closeButtons = document.getElementsByClassName("close");
+        if (closeButtons.length > 2) {
+            closeButtons[2].onclick = function() {
+                el("versionwindow").style.display = "none";
+            };
+        }
+    }
+
+    function restoreVersion(index) {
+        const result = PERSISTENCE.restoreFromHistory(index);
+        if (result) {
+            bowlprop = result.bowlprop;
+            ctrl = result.ctrl;
+            setUnit();
+            loadSawKerf();
+            drawCanvas();
+            build3D();
+            el("versionwindow").style.display = "none";
+        }
+    }
+
+    function clearVersions() {
+        if (confirm('Clear all saved versions?')) {
+            PERSISTENCE.clearHistory();
+            updateStorageInfo();
+        }
+    }
+
+    function updateStorageInfo() {
+        const count = PERSISTENCE.getHistoryCount();
+        if (count > 0) {
+            el("storageinfo").innerHTML = `${count} version${count > 1 ? 's' : ''} saved`;
+            el("restoreversion").disabled = false;
+        } else {
+            el("storageinfo").innerHTML = "no versions saved";
+            el("restoreversion").disabled = true;
         }
     }
 

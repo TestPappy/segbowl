@@ -94,7 +94,7 @@ import * as PERSISTENCE from './persistence.js';
         view2d.centerx = view2d.canvas.width / 2;
 
         bowlprop.cpoint = [
-            { x: view2d.centerx + 25.4 * view2d.scale, y: view2d.bottom },                      // 25.4mm (was 1.0")
+            { x: view2d.centerx + 25.4 * view2d.scale, y: view2d.bottom },                      // 25.4mm (was 1.0"), y locked to baseline
             { x: view2d.centerx + 50.8 * view2d.scale, y: view2d.bottom },                      // 50.8mm (was 2.0")
             { x: view2d.centerx + 50.8 * view2d.scale, y: view2d.bottom - 76.2 * view2d.scale },// 50.8mm, 76.2mm (was 2.0", 3.0")
             { x: view2d.centerx + 63.5 * view2d.scale, y: view2d.bottom - 88.9 * view2d.scale },// 63.5mm, 88.9mm (was 2.5", 3.5") - start of next bezier curve
@@ -420,6 +420,24 @@ import * as PERSISTENCE from './persistence.js';
             const pos = mousePos(e, view2d.canvas);
             bowlprop.cpoint[ctrl.drag].x += pos.x - ctrl.dPoint.x;
             bowlprop.cpoint[ctrl.drag].y += pos.y - ctrl.dPoint.y;
+            
+            // Global constraint: no control point can go left of center axis
+            if (bowlprop.cpoint[ctrl.drag].x < view2d.centerx) {
+                bowlprop.cpoint[ctrl.drag].x = view2d.centerx;
+            }
+            
+            // Constraints for first pair of control points
+            // Point 0 (left): locked to baseline (y=0)
+            if (ctrl.drag === 0) {
+                bowlprop.cpoint[0].y = view2d.bottom;
+            }
+            // Point 1 (right): cannot go below baseline
+            if (ctrl.drag === 1) {
+                if (bowlprop.cpoint[1].y > view2d.bottom) {
+                    bowlprop.cpoint[1].y = view2d.bottom;
+                }
+            }
+            
             ctrl.dPoint = pos;
             drawCanvas();
             if (el("redrawdrag").checked) {

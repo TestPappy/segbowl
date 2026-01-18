@@ -708,19 +708,21 @@ select:focus {
    ============================================ */
 
 #canvasviews {
-    display: grid;
-    grid-template-columns: repeat(3, 1fr);
+    display: flex;
+    flex-wrap: nowrap;
     gap: var(--space-md);
     background: var(--color-bg-darker);
     padding: var(--space-md);
     border-radius: var(--radius-lg);
     border: 1px solid var(--color-border);
+    align-items: stretch;
 }
 
 #canvasviews canvas {
-    width: 100%;
-    max-width: 100%;
-    height: auto;
+    flex: 1 1 0;
+    min-width: 0;
+    max-width: 500px;
+    max-height: 500px;
     border-radius: var(--radius-md);
     box-shadow: var(--shadow-sm);
     display: block;

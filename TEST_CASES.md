@@ -8,11 +8,11 @@ This document lists all test cases to be implemented for comprehensive test cove
 |-----------|---------------|------------|-------|
 | `common.test.js` | 42 ✅ | 0 | 42 |
 | `bowl_calculator.test.js` | 59 ✅ | 0 | 59 |
-| `ring_calculator.test.js` | 2 | 39 | 41 |
+| `ring_calculator.test.js` | 37 ✅ | 0 | 37 |
 | `persistence.test.js` | 5 | 26 | 31 |
 | `drawing.test.js` | 0 | 28 | 28 |
 | `report.test.js` | 0 | 35 | 35 |
-| **Total** | **108** | **128** | **236** |
+| **Total** | **143** | **89** | **232** |
 
 ---
 
@@ -155,48 +155,48 @@ This document lists all test cases to be implemented for comprehensive test cove
 
 ---
 
-## 3. ring_calculator.test.js
+## 3. ring_calculator.test.js ✅ COMPLETE
 
 ### calcRings()
 - [x] Calculates ring dimensions in mm
-- [ ] Returns height as max y value of curve
-- [ ] Returns radius as max x value of curve
-- [ ] Counts usedrings correctly based on height
-- [ ] Creates new rings when bowl is taller than existing rings
-- [ ] Preserves existing ring properties
-- [ ] Calculates xvals.max with padding added
-- [ ] Calculates xvals.min with padding subtracted
-- [ ] xvals.min is never negative
-- [ ] xvals.max is never negative
-- [ ] Handles rings with different heights
-- [ ] Handles tall bowls requiring many rings
-- [ ] Handles short bowls with few rings
-- [ ] Handles different wall thickness values
-- [ ] Handles different padding values
-- [ ] Interpolates x values for thin rings
-- [ ] Does not mutate original bowlprop object
+- [x] Returns height as max y value of curve
+- [x] Returns radius as max x value of curve
+- [x] Counts usedrings correctly based on height
+- [x] Creates new rings when bowl is taller than existing rings
+- [x] Preserves existing ring properties
+- [x] Calculates xvals.max with padding added
+- [x] Calculates xvals.min with padding subtracted
+- [x] xvals.min is never negative
+- [x] xvals.max is never negative
+- [x] Handles rings with different heights
+- [x] Handles tall bowls requiring many rings
+- [x] Handles short bowls with few rings
+- [x] Handles different wall thickness values
+- [x] Handles different padding values
+- [x] Interpolates x values for thin rings
+- [x] Does not mutate original bowlprop object
 
 ### calcRingTrapz()
 - [x] Calculates trapezoid shapes for ring segments
-- [ ] Returns one trapezoid per segment
-- [ ] Each trapezoid has 4 corner points
-- [ ] Calculates correct theta angle for each segment
-- [ ] selthetas tracks cumulative rotation
-- [ ] Rotates trapezoids when rotate=true
-- [ ] Does not rotate trapezoids when rotate=false
-- [ ] Applies ring theta offset to rotation
-- [ ] Defaults to ring index 0 when null
-- [ ] Handles 6 segment rings
-- [ ] Handles 8 segment rings
-- [ ] Handles 12 segment rings
-- [ ] Handles 16 segment rings
-- [ ] Handles 24 segment rings
-- [ ] Handles unequal segment lengths
-- [ ] Trapezoid corners are within ring xvals bounds
-- [ ] Adjusts outer radius for segments to meet at endpoints
-- [ ] Trapezoid points form valid polygon in order
-- [ ] Handles minimum 3 segments
-- [ ] All segment thetas sum to full circle
+- [x] Returns one trapezoid per segment
+- [x] Each trapezoid has 4 corner points
+- [x] Calculates correct theta angle for each segment
+- [x] selthetas tracks cumulative rotation
+- [x] Rotates trapezoids when rotate=true
+- [x] Does not rotate trapezoids when rotate=false
+- [x] Applies ring theta offset to rotation
+- [x] Defaults to ring index 0 when null
+- [x] Handles 6 segment rings
+- [x] Handles 8 segment rings
+- [x] Handles 12 segment rings
+- [x] Handles 16 segment rings
+- [x] Handles 24 segment rings
+- [x] Handles unequal segment lengths
+- [x] Trapezoid corners are within ring xvals bounds
+- [x] Adjusts outer radius for segments to meet at endpoints
+- [x] Trapezoid points form valid polygon in order
+- [x] Handles minimum 3 segments
+- [x] All segment thetas sum to full circle
 
 ---
 

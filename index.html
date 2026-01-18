@@ -79,7 +79,7 @@
         <p>Colors:
             <button id="btnPal" class="hbutton" style="float: right">Palette...</button>
         </p>
-        <p>
+        <p id="paletteButtons">
             <button class="clrbtn" style="background-color: #E2CAA0;" title="maple"></button>
             <button class="clrbtn" style="background-color: #AD743F;" title="beech"></button>
             <button class="clrbtn" style="background-color: #995018;" title="cherry"></button>
@@ -119,12 +119,17 @@
         <button id="gentable" class="hbutton">Report</button>
     </p>
     <p>
-        <button id="loaddesign" class="hbutton">Load</button>
-        <button id="savedesign" class="hbutton">Save</button>
-        <button id="cleardesign" class="hbutton">Clear</button>
+        <button id="exportdesign" class="hbutton">Export</button>
+        <button id="importdesign" class="hbutton">Import</button>
+        <input type="file" id="importfile" accept=".json" style="display:none">
     </p>
     <p>
-        <div id="storageinfo">no design in storage</div>
+        <button id="saveversion" class="hbutton">Save Version</button>
+        <button id="restoreversion" class="hbutton">Restore...</button>
+        <button id="clearversions" class="hbutton">Clear</button>
+    </p>
+    <p>
+        <div id="storageinfo">no versions saved</div>
     </p>
 </div>
 
@@ -136,6 +141,8 @@
         <label for="viewRing"><span></span>Ring&nbsp;&nbsp;</label>
         <input type="checkbox" id="view3D" checked>
         <label for="view3D"><span></span>3D&nbsp;&nbsp;</label>
+        <input type="checkbox" id="showScales" checked>
+        <label for="showScales"><span></span>Show Scales</label>
     </div>
 
     <div id="canvasviews">
@@ -198,6 +205,18 @@
             Original <a href="http://www.bitbucket.org/cdelker/segbowl/">Source Code</a> by Collin J. Delker is available on BitBucket.<br>
             The <a href="https://github.com/TestPappy/segbowl">source code</a> of this version is available on GitHub.
             It is available online at <a href="https://www.pfefferholz.de/">https://www.pfefferholz.de/</a>.
+    </div>
+</div>
+
+<!-- Version History Dialog -->
+<div id="versionwindow" class="modal">
+    <div class="modal-content">
+        <span class="close">&times;</span>
+        <h3>Recent Versions</h3>
+        <p>Select a version to restore:</p>
+        <div id="versionlist">
+            <!-- Version items will be populated dynamically -->
+        </div>
     </div>
 </div>
 

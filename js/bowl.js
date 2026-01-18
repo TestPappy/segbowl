@@ -9,7 +9,8 @@ import { defaultColors, defaultWood, defaultLens, capitalize, reduce as reduceVa
 import { screenToRealPoint, realToScreen, screenToReal, calcBezPath, splitRingY, offsetCurve } from './bowl_calculator.js';
 import { calcRings } from './ring_calculator.js';
 import { createReport, getReportSegsList } from './report.js';
-import { clearCanvas, drawCurve, drawRing, drawSegProfile } from './drawing.js';
+import { clearCanvas, drawCurve, drawRing, drawSegProfile, drawWidthScale, drawHeightScale, drawRingDiameterScale } from './drawing.js';
+import { woodcolors, brightcolors, getWoodByColor, getColorName, getWoodColorKeys, getBrightColorKeys } from './palette.js';
 import * as PERSISTENCE from './persistence.js';
 
 (() => {
@@ -119,6 +120,7 @@ import * as PERSISTENCE from './persistence.js';
         el("showsegs").onchange = drawCanvas;
         el("showsegnum").onchange = drawCanvas;
         el("showratio").onchange = drawCanvas;
+        el("showScales").onchange = drawCanvas;
         el("segHupCoarse").onclick = setSegHeight;
         el("segHupFine").onclick = setSegHeight;
         el("segHdnFine").onclick = setSegHeight;
@@ -137,9 +139,12 @@ import * as PERSISTENCE from './persistence.js';
         el("mm").onclick = unitChange;
         el("gentable").onclick = genReport;
         el("about").onclick = about;
-        el("loaddesign").onclick = load;
-        el("savedesign").onclick = save;
-        el("cleardesign").onclick = clear;
+        el("exportdesign").onclick = exportDesign;
+        el("importdesign").onclick = () => el("importfile").click();
+        el("importfile").onchange = importDesign;
+        el("saveversion").onclick = saveVersion;
+        el("restoreversion").onclick = showVersionHistory;
+        el("clearversions").onclick = clearVersions;
         el("sawkerf").onchange = saveSawKerf;
         window.addEventListener('resize', resizeWindow);
         const btnclrclass = document.getElementsByClassName("clrbtn");
@@ -176,7 +181,7 @@ import * as PERSISTENCE from './persistence.js';
         /* var axisHelper = new THREE.AxisHelper(5);
         view3d.scene.add(axisHelper);  */
         build3D();
-        checkStorage();
+        updateStorageInfo();
     }
 
     /*======================
@@ -196,33 +201,15 @@ import * as PERSISTENCE from './persistence.js';
         ctx.stroke();
     }
 
-    function drawScale(ctx, size) {
-        const topleft = realToScreen(view2d, -bowlprop.radius, bowlprop.height);
-        const botright = realToScreen(view2d, bowlprop.radius, 0);
-        const middleX = (botright.x + topleft.x)/2;
-        ctx.lineWidth = 1;
-        ctx.strokeStyle = "#000000";
-        ctx.beginPath();
-        ctx.moveTo(middleX, 10);
-        ctx.lineTo(botright.x, 10);
-        ctx.moveTo(middleX, 5);
-        ctx.lineTo(middleX, 15);
-        ctx.moveTo(botright.x, 5);
-        ctx.lineTo(botright.x, 15);
-        ctx.stroke();
-
-        ctx.fillStyle = "black";
-        ctx.font = "12px Arial";
-        ctx.textAlign = "center";
-        ctx.fillText(size, (middleX + botright.x)/2, 25);
-        ctx.stroke();
-    }
-
     function getMaxRadius() {
         const radii = bowlprop.rings
             .map(r => (r.xvals && typeof r.xvals.max === 'number') ? r.xvals.max : 0);
         const maxRadius = Math.max(...radii, 0);
         return reduce(maxRadius);
+    }
+
+    function getTotalHeight() {
+        return reduce(bowlprop.height);
     }
 
     function drawControlPoints(ctx) {
@@ -272,9 +259,16 @@ import * as PERSISTENCE from './persistence.js';
         drawControlLines(view2d.ctx);
         drawCurve(view2d.ctx, bowlprop, view2d, style);
         drawControlPoints(view2d.ctx);
-        drawScale(view2d.ctx, getMaxRadius());
+        if (el("showScales").checked) {
+            drawWidthScale(view2d.ctx, view2d, bowlprop, getMaxRadius());
+            drawHeightScale(view2d.ctx, view2d, bowlprop, getTotalHeight());
+        }
         if (el("canvas2").style.display != "none" && ctrl.selring != null) {
             drawRing(view2d.ctx2, ctrl.selring, bowlprop, view2d, ctrl, style);
+            if (el("showScales").checked) {
+                const ring = bowlprop.rings[ctrl.selring];
+                drawRingDiameterScale(view2d.ctx2, view2d, ring.xvals.max, reduce(ring.xvals.max * 2));
+            }
         }
         updateRingInfo();
     }
@@ -804,51 +798,43 @@ import * as PERSISTENCE from './persistence.js';
         createReport(nwindow, bowlprop, step, ctrl, view2d, view3d, style);
     }
 
-    function getWoodByColor(clr) {
-        const woodByColorMap = new Map();
-        woodByColorMap.set('rgb(226, 202, 160)', 'maple');  //#E2CAA0
-        woodByColorMap.set('rgb(173, 116, 63)', 'beech');   //#AD743F
-        woodByColorMap.set('rgb(153, 80, 24)', 'cherry');   //#995018
-        woodByColorMap.set('rgb(123, 79, 52)', 'walnut');   //#7B4F34
-        woodByColorMap.set('rgb(98, 51, 41)', 'teak');      //#623329
-        woodByColorMap.set('rgb(68, 37, 43)', 'cocobolo');  //#E2CAA0
-        woodByColorMap.set('rgb(132, 62, 75)', 'amaranth'); //#843E4B
-        if (woodByColorMap.has(clr)) {
-            return woodByColorMap.get(clr);
-        } else {
-            console.log("No match for: " + clr);
-            return "unknown";
-        }
-    }
-
     function showPalette() {
-        const woodcolors = [
-            '#FDFAF4', '#E2CAA0', '#C29A1F', '#C98753', '#AC572F', '#995018', '#7B4F34',
-            '#6E442E', '#623329', '#51240D', '#EFEBE0', '#EFB973', '#AD743F', '#965938',
-            '#884B2F', '#7C3826', '#843E4B', '#582824', '#44252B', '#342022'
-        ];
-        const brightcolors = [
-            "#FF0000", "#FF8000", "#FFFF00", "#80FF00", "#00FF80", "#00FFFF", "#0080FF",
-            "#0000FF", "#FF00FF", "#800040", "#FF6666", "#FFCC66", "#FFFF66", "#CCFF66",
-            "#66FF66", "#66FFCC", "#66CCFF", "#6666FF", "#CC66FF", "#000000"
-        ];
+        const woodcolorKeys = getWoodColorKeys();
+        const brightcolorKeys = getBrightColorKeys();
 
         el("colortype").onchange =
             function (event) {
                 let clist;
+                let colorMap;
                 if (event.target.value === "wood") {
-                    clist = woodcolors;
+                    clist = woodcolorKeys;
+                    colorMap = woodcolors;
                 } else {
-                    clist = brightcolors;
+                    clist = brightcolorKeys;
+                    colorMap = brightcolors;
                 }
                 const buttons = document.getElementsByClassName("clrsel");
-                for (const i in clist) {
+                for (let i = 0; i < clist.length; i++) {
                     buttons[i].style.backgroundColor = clist[i];
+                    buttons[i].title = colorMap.get(clist[i]);
                 }
             };
 
         function dragclr(ev) {
             ev.dataTransfer.setData("text", ev.target.style.backgroundColor);
+            ev.dataTransfer.setData("source", "colorpicker");
+        }
+
+        function dragPaletteItem(ev) {
+            ev.dataTransfer.setData("text", ev.target.style.backgroundColor);
+            ev.dataTransfer.setData("source", "palette");
+            ev.dataTransfer.effectAllowed = "move";
+            // Store reference to the dragged element
+            ev.target.classList.add("dragging");
+        }
+
+        function dragEndPaletteItem(ev) {
+            ev.target.classList.remove("dragging");
         }
 
         function dragover(ev) {
@@ -861,42 +847,103 @@ import * as PERSISTENCE from './persistence.js';
             ev.target.style.backgroundColor = clr;
         }
 
+        function dropToTrash(ev) {
+            ev.preventDefault();
+            const dragging = document.querySelector(".tmppal.dragging");
+            if (dragging) {
+                dragging.remove();
+            }
+        }
+
+        function createPaletteItem(bgColor) {
+            const c = document.createElement("span");
+            c.className = "tmppal";
+            c.style.backgroundColor = bgColor;
+            c.draggable = "true";
+            c.ondragstart = dragPaletteItem;
+            c.ondragend = dragEndPaletteItem;
+            c.ondragover = dragover;
+            c.ondrop = dropclr;
+            return c;
+        }
+
+        function addPaletteItem() {
+            const paletteContainer = document.getElementById("paletteItems");
+            // Default to first wood color
+            const defaultColor = woodcolors.keys().next().value;
+            const newItem = createPaletteItem(defaultColor);
+            paletteContainer.appendChild(newItem);
+        }
+
         el("colorselect").innerHTML = "";
         const clropts = document.createElement("p");
-        for (const i in woodcolors) {
-            if (i == woodcolors.length / 2) { clropts.appendChild(document.createElement("br")); }
+        let idx = 0;
+        for (const [hexColor, woodName] of woodcolors) {
+            if (idx == woodcolors.size / 2) { clropts.appendChild(document.createElement("br")); }
             const c = document.createElement("span");
             c.className = "clrsel";
-            c.style.backgroundColor = woodcolors[i];
+            c.style.backgroundColor = hexColor;
+            c.title = woodName;
             c.draggable = "true";
             c.ondragstart = dragclr;
             clropts.appendChild(c);
+            idx++;
         }
 
         const btnpalette = document.getElementsByClassName("clrbtn");
         const palette = document.createElement("p");
         palette.appendChild(document.createElement("hr"));
         palette.appendChild(document.createTextNode("Palette: "));
+        
+        // Container for palette items
+        const paletteItems = document.createElement("span");
+        paletteItems.id = "paletteItems";
         for (let i = 0; i < btnpalette.length; i++) {
-            const c = document.createElement("span");
-            c.className = "tmppal";
-            c.style.backgroundColor = btnpalette[i].style.backgroundColor;
-            c.ondragover = dragover;
-            c.ondrop = dropclr;
-            palette.appendChild(c);
+            paletteItems.appendChild(createPaletteItem(btnpalette[i].style.backgroundColor));
         }
+        palette.appendChild(paletteItems);
+
+        // Add button
+        const addBtn = document.createElement("button");
+        addBtn.textContent = "+";
+        addBtn.className = "hbutton";
+        addBtn.style.marginLeft = "10px";
+        addBtn.style.verticalAlign = "middle";
+        addBtn.onclick = addPaletteItem;
+        palette.appendChild(addBtn);
+
+        // Trash bin
+        const trashBin = document.createElement("span");
+        trashBin.className = "trashbin";
+        trashBin.innerHTML = "🗑";
+        trashBin.title = "Drag palette item here to delete";
+        trashBin.ondragover = dragover;
+        trashBin.ondrop = dropToTrash;
+        palette.appendChild(trashBin);
+
         el("colorselect").appendChild(clropts);
         el("colorselect").appendChild(palette);
         el("palettewindow").style.display = "block";
     }
 
     document.getElementsByClassName("close")[0].onclick = function () {
-        const btnpalette = document.getElementsByClassName("clrbtn");
         const tmppalette = document.getElementsByClassName("tmppal");
-        for (let i = 0; i < btnpalette.length; i++) {
-            btnpalette[i].style.backgroundColor = tmppalette[i].style.backgroundColor;
-            btnpalette[i].title = getWoodByColor(tmppalette[i].style.backgroundColor);
+        const paletteContainer = el("paletteButtons");
+        
+        // Remove all existing palette buttons
+        const existingButtons = paletteContainer.querySelectorAll(".clrbtn");
+        existingButtons.forEach(btn => btn.remove());
+        
+        // Create new buttons from tmppal items
+        for (let i = 0; i < tmppalette.length; i++) {
+            const btn = document.createElement("button");
+            btn.className = "clrbtn";
+            btn.style.backgroundColor = tmppalette[i].style.backgroundColor;
+            btn.title = getColorName(tmppalette[i].style.backgroundColor);
+            btn.onclick = colorChange;
+            paletteContainer.appendChild(btn);
         }
+        
         el("palettewindow").style.display = "none";
     };
 
@@ -911,35 +958,137 @@ import * as PERSISTENCE from './persistence.js';
         };
     }
 
-    function save() {
-        PERSISTENCE.saveDesignAndSettings(bowlprop, ctrl);
-        checkStorage();
-        el("loaddesign").disabled = false;
+    /*======================
+      File Export/Import
+    ======================*/
+    function exportDesign() {
+        const timestamp = new Date().toISOString().slice(0, 10);
+        const filename = `bowl-design-${timestamp}.json`;
+        PERSISTENCE.exportToFile(bowlprop, ctrl, view2d.canvas, filename);
     }
 
-    function load() {
-        if (PERSISTENCE.checkStorage() !== null) {
-            bowlprop = PERSISTENCE.loadDesign();
-            ctrl = PERSISTENCE.loadSettings();
-        }
-        setUnit();
-        loadSawKerf();
-        drawCanvas();
-        build3D();
+    function importDesign(event) {
+        const file = event.target.files[0];
+        if (!file) return;
+        
+        PERSISTENCE.importFromFile(file)
+            .then(result => {
+                bowlprop = result.bowlprop;
+                ctrl = result.ctrl;
+                setUnit();
+                loadSawKerf();
+                drawCanvas();
+                build3D();
+                // Reset file input so same file can be imported again
+                event.target.value = '';
+            })
+            .catch(err => {
+                alert('Failed to import design: ' + err.message);
+                event.target.value = '';
+            });
     }
 
-    function clear() {
-        PERSISTENCE.clearDesignAndSettings();
-        checkStorage();
+    /*======================
+      Version History
+    ======================*/
+    function saveVersion() {
+        PERSISTENCE.saveToHistory(bowlprop, ctrl, view2d.canvas);
+        updateStorageInfo();
     }
 
-    function checkStorage() {
-        if (PERSISTENCE.checkStorage() !== null) {
-            const timestamp = PERSISTENCE.checkStorage();
-            el("storageinfo").innerHTML = "Design saved from " + timestamp;
+    function showVersionHistory() {
+        const summary = PERSISTENCE.getHistorySummary();
+        const versionList = el("versionlist");
+        versionList.innerHTML = '';
+        
+        if (summary.length === 0) {
+            versionList.innerHTML = '<div class="no-versions">No saved versions</div>';
         } else {
-            el("storageinfo").innerHTML = "no design in storage";
-            el("loaddesign").disabled = true;
+            summary.forEach((item, idx) => {
+                const versionItem = document.createElement('div');
+                versionItem.className = 'version-item';
+                versionItem.onclick = () => restoreVersion(idx);
+                
+                // Thumbnail
+                if (item.thumbnail) {
+                    const img = document.createElement('img');
+                    img.className = 'version-thumbnail';
+                    img.src = item.thumbnail;
+                    img.alt = 'Version thumbnail';
+                    versionItem.appendChild(img);
+                } else {
+                    const placeholder = document.createElement('div');
+                    placeholder.className = 'version-thumbnail-placeholder';
+                    placeholder.textContent = 'No preview';
+                    versionItem.appendChild(placeholder);
+                }
+                
+                // Info
+                const info = document.createElement('div');
+                info.className = 'version-info';
+                
+                const name = document.createElement('div');
+                name.className = 'version-name';
+                name.textContent = item.metadata?.name || `Version ${summary.length - idx}`;
+                info.appendChild(name);
+                
+                const date = document.createElement('div');
+                date.className = 'version-date';
+                if (item.metadata?.modified) {
+                    const d = new Date(item.metadata.modified);
+                    date.textContent = d.toLocaleString();
+                }
+                info.appendChild(date);
+                
+                const details = document.createElement('div');
+                details.className = 'version-details';
+                details.textContent = item.metadata?.appVersion ? `App v${item.metadata.appVersion}` : '';
+                info.appendChild(details);
+                
+                versionItem.appendChild(info);
+                versionList.appendChild(versionItem);
+            });
+        }
+        
+        el("versionwindow").style.display = "block";
+        
+        // Set up close button for version window
+        const closeButtons = document.getElementsByClassName("close");
+        if (closeButtons.length > 2) {
+            closeButtons[2].onclick = function() {
+                el("versionwindow").style.display = "none";
+            };
+        }
+    }
+
+    function restoreVersion(index) {
+        const result = PERSISTENCE.restoreFromHistory(index);
+        if (result) {
+            bowlprop = result.bowlprop;
+            ctrl = result.ctrl;
+            setUnit();
+            loadSawKerf();
+            drawCanvas();
+            build3D();
+            el("versionwindow").style.display = "none";
+        }
+    }
+
+    function clearVersions() {
+        if (confirm('Clear all saved versions?')) {
+            PERSISTENCE.clearHistory();
+            updateStorageInfo();
+        }
+    }
+
+    function updateStorageInfo() {
+        const count = PERSISTENCE.getHistoryCount();
+        if (count > 0) {
+            el("storageinfo").innerHTML = `${count} version${count > 1 ? 's' : ''} saved`;
+            el("restoreversion").disabled = false;
+        } else {
+            el("storageinfo").innerHTML = "no versions saved";
+            el("restoreversion").disabled = true;
         }
     }
 

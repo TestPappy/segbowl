@@ -140,3 +140,105 @@ function drawPoly(ctx, poly, fill = true, view2d) {
     if (fill) { ctx.fill(); }
     ctx.stroke();
 }
+
+/**
+ * Draw a horizontal scale showing the max radius/width at the top of the profile canvas
+ * @param {CanvasRenderingContext2D} ctx - The canvas context
+ * @param {View2D} view2d - The 2D view configuration
+ * @param {BowlProp} bowlprop - The bowl properties
+ * @param {string} sizeLabel - The formatted size label to display
+ */
+export function drawWidthScale(ctx, view2d, bowlprop, sizeLabel) {
+    const topleft = realToScreen(view2d, -bowlprop.radius, bowlprop.height);
+    const botright = realToScreen(view2d, bowlprop.radius, 0);
+    const middleX = (botright.x + topleft.x) / 2;
+    ctx.lineWidth = 1;
+    ctx.strokeStyle = "#000000";
+    ctx.beginPath();
+    ctx.moveTo(middleX, 10);
+    ctx.lineTo(botright.x, 10);
+    ctx.moveTo(middleX, 5);
+    ctx.lineTo(middleX, 15);
+    ctx.moveTo(botright.x, 5);
+    ctx.lineTo(botright.x, 15);
+    ctx.stroke();
+
+    ctx.fillStyle = "black";
+    ctx.font = "12px Arial";
+    ctx.textAlign = "center";
+    ctx.fillText(sizeLabel, (middleX + botright.x) / 2, 25);
+    ctx.stroke();
+}
+
+/**
+ * Draw a vertical scale showing the total height on the left side of the profile canvas
+ * @param {CanvasRenderingContext2D} ctx - The canvas context
+ * @param {View2D} view2d - The 2D view configuration
+ * @param {BowlProp} bowlprop - The bowl properties
+ * @param {string} sizeLabel - The formatted size label to display
+ */
+export function drawHeightScale(ctx, view2d, bowlprop, sizeLabel) {
+    const topleft = realToScreen(view2d, -bowlprop.radius, bowlprop.height);
+    const botright = realToScreen(view2d, bowlprop.radius, 0);
+    const scaleX = 10; // X position for the height scale (left side of canvas)
+    ctx.lineWidth = 1;
+    ctx.strokeStyle = "#000000";
+    ctx.beginPath();
+    // Vertical line from top to bottom of bowl
+    ctx.moveTo(scaleX, topleft.y);
+    ctx.lineTo(scaleX, botright.y);
+    // Tick mark at top
+    ctx.moveTo(scaleX - 5, topleft.y);
+    ctx.lineTo(scaleX + 5, topleft.y);
+    // Tick mark at bottom
+    ctx.moveTo(scaleX - 5, botright.y);
+    ctx.lineTo(scaleX + 5, botright.y);
+    ctx.stroke();
+
+    ctx.fillStyle = "black";
+    ctx.font = "12px Arial";
+    ctx.save();
+    ctx.translate(25, (topleft.y + botright.y) / 2);
+    ctx.rotate(-Math.PI / 2);
+    ctx.textAlign = "center";
+    ctx.fillText(sizeLabel, 0, 0);
+    ctx.restore();
+}
+
+/**
+ * Draw a vertical scale showing the ring diameter on the left side of the ring canvas
+ * @param {CanvasRenderingContext2D} ctx - The canvas context
+ * @param {View2D} view2d - The 2D view configuration
+ * @param {number} radius - The outer radius of the ring
+ * @param {string} diameterLabel - The formatted diameter label to display
+ */
+export function drawRingDiameterScale(ctx, view2d, radius, diameterLabel) {
+    const radiusScreen = radius * view2d.scale;
+    const centerY = ctx.canvas.height / 2;
+    const topY = centerY - radiusScreen;
+    const bottomY = centerY + radiusScreen;
+    const scaleX = 10; // X position for the scale (left side of canvas)
+    
+    ctx.lineWidth = 1;
+    ctx.strokeStyle = "#000000";
+    ctx.beginPath();
+    // Vertical line from top to bottom of ring
+    ctx.moveTo(scaleX, topY);
+    ctx.lineTo(scaleX, bottomY);
+    // Tick mark at top
+    ctx.moveTo(scaleX - 5, topY);
+    ctx.lineTo(scaleX + 5, topY);
+    // Tick mark at bottom
+    ctx.moveTo(scaleX - 5, bottomY);
+    ctx.lineTo(scaleX + 5, bottomY);
+    ctx.stroke();
+
+    ctx.fillStyle = "black";
+    ctx.font = "12px Arial";
+    ctx.save();
+    ctx.translate(25, centerY);
+    ctx.rotate(-Math.PI / 2);
+    ctx.textAlign = "center";
+    ctx.fillText(diameterLabel, 0, 0);
+    ctx.restore();
+}

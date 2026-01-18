@@ -11,8 +11,8 @@ This document lists all test cases to be implemented for comprehensive test cove
 | `ring_calculator.test.js` | 37 ✅ | 0 | 37 |
 | `persistence.test.js` | 5 | 26 | 31 |
 | `drawing.test.js` | 0 | 28 | 28 |
-| `report.test.js` | 0 | 35 | 35 |
-| **Total** | **143** | **89** | **232** |
+| `report.test.js` | 33 ✅ | 0 | 33 |
+| **Total** | **176** | **54** | **230** |
 
 ---
 
@@ -281,44 +281,46 @@ This document lists all test cases to be implemented for comprehensive test cove
 
 ---
 
-## 6. report.test.js (NEW)
+## 6. report.test.js ✅ COMPLETE
 
 ### getReportSegsList()
-- [ ] Returns array of segment info objects
-- [ ] Groups identical segments by color and size
-- [ ] Calculates correct cut angle for each segment group
-- [ ] Calculates outside edge length
-- [ ] Calculates inside edge length
-- [ ] Calculates segment width (radial dimension)
-- [ ] Calculates total strip length needed
-- [ ] Includes wood type for each segment group
-- [ ] Includes color for each segment group
-- [ ] Counts number of identical segments
-- [ ] Returns single group when all segments are identical
-- [ ] Handles alternating color patterns
-- [ ] Handles all unique colors
-- [ ] Separates segments with different lengths even if same color
-- [ ] Handles various segment counts (6, 8, 12, 16, 24)
-- [ ] Handles base ring (ring index 0)
-- [ ] Works with any valid ring index
+- [x] Returns array of segment info objects
+- [x] Groups identical segments by color and size
+- [x] Calculates correct cut angle for each segment group
+- [x] Calculates outside edge length
+- [x] Calculates inside edge length
+- [x] Calculates segment width (radial dimension)
+- [x] Calculates total strip length needed
+- [x] Includes wood type for each segment group
+- [x] Includes color for each segment group
+- [x] Counts number of identical segments
+- [x] Returns single group when all segments are identical
+- [x] Handles alternating color patterns
+- [x] Handles all unique colors
+- [x] Separates segments with different lengths even if same color
+- [x] Handles various segment counts (6, 8, 12, 16, 24)
+- [x] Handles base ring (ring index 0)
+- [x] Works with any valid ring index
+- [x] Calculates length as accumulated outlen for identical segments
+- [x] Uses correct trapezoid points for calculations
 
 ### createReport()
-- [ ] Creates cut list table with all rings
-- [ ] Labels first ring as Base and others with numbers
-- [ ] Includes ring diameter in report
-- [ ] Includes ring thickness in report
-- [ ] Includes ring rotation angle
-- [ ] Formats measurements according to step parameter
-- [ ] Generates bowl profile image
-- [ ] Generates 3D view image
-- [ ] Generates image for each ring
-- [ ] Creates individual cut list table for each ring
+- [x] Creates cut list table with all rings
+- [x] Labels first ring as Base and others with numbers
+- [x] Includes ring diameter in report
+- [x] Includes ring thickness in report
+- [x] Includes ring rotation angle
+- [x] Formats measurements according to step parameter
+- [x] Generates bowl profile image
+- [x] Generates 3D view image
+- [x] Generates image for each ring
+- [x] Creates individual cut list table for each ring
 
 ### add_cutlist_row (via integration)
-- [ ] Adds table row for each segment group
-- [ ] Formats cut angle with degree symbol
-- [ ] Accounts for saw kerf in total strip length
-- [ ] Handles multiple segment groups in one ring
+- [x] Adds table row for each segment group
+- [x] Formats cut angle with degree symbol
+- [x] Accounts for saw kerf in total strip length
+- [x] Handles multiple segment groups in one ring
 
 ---
 

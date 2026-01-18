@@ -104,14 +104,27 @@ function createMockStyle() {
     };
 }
 
-// Mock document.getElementById for drawSegProfile tests
+// Mock elements for document.getElementById
 const mockShowSegNum = { checked: false };
-global.document = {
-    getElementById: jest.fn((id) => {
+let getElementByIdSpy;
+
+beforeEach(() => {
+    // Reset mock state
+    mockShowSegNum.checked = false;
+    
+    // Spy on document.getElementById
+    getElementByIdSpy = jest.spyOn(document, 'getElementById').mockImplementation((id) => {
         if (id === 'showsegnum') return mockShowSegNum;
         return null;
-    })
-};
+    });
+});
+
+afterEach(() => {
+    // Restore original implementation
+    if (getElementByIdSpy) {
+        getElementByIdSpy.mockRestore();
+    }
+});
 
 // =============================================================================
 // TEST CASES FOR: clearCanvas
@@ -279,10 +292,6 @@ describe('drawCurve', () => {
 // TEST CASES FOR: drawSegProfile
 // =============================================================================
 describe('drawSegProfile', () => {
-    beforeEach(() => {
-        mockShowSegNum.checked = false;
-    });
-
     it('highlights selected ring with selection style', () => {
         const view2d = createMockView2d();
         const bowlprop = createMockBowlprop(view2d);

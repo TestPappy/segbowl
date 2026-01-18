@@ -7,12 +7,12 @@ This document lists all test cases to be implemented for comprehensive test cove
 | Test File | Existing Tests | TODO Tests | Total |
 |-----------|---------------|------------|-------|
 | `common.test.js` | 42 ✅ | 0 | 42 |
-| `bowl_calculator.test.js` | 6 | 42 | 48 |
+| `bowl_calculator.test.js` | 59 ✅ | 0 | 59 |
 | `ring_calculator.test.js` | 2 | 39 | 41 |
 | `persistence.test.js` | 5 | 26 | 31 |
 | `drawing.test.js` | 0 | 28 | 28 |
 | `report.test.js` | 0 | 35 | 35 |
-| **Total** | **55** | **170** | **225** |
+| **Total** | **108** | **128** | **236** |
 
 ---
 
@@ -80,78 +80,78 @@ This document lists all test cases to be implemented for comprehensive test cove
 
 ---
 
-## 2. bowl_calculator.test.js
+## 2. bowl_calculator.test.js ✅ COMPLETE
 
 ### screenToRealPoint()
 - [x] Converts click on canvas edge to real point
 - [x] Converts click on top center to real point
-- [ ] Converts center of canvas to origin in real coordinates
-- [ ] Handles clicks left of center (negative x)
-- [ ] Converts bottom edge correctly with 12.7mm offset
-- [ ] Handles all four canvas corners
-- [ ] Scales correctly with different scale factors
-- [ ] Handles non-square canvas dimensions
+- [x] Converts center of canvas to origin in real coordinates
+- [x] Handles clicks left of center (negative x)
+- [x] Converts bottom edge correctly with 12.7mm offset
+- [x] Handles all four canvas corners
+- [x] Scales correctly with different scale factors
+- [x] Handles non-square canvas dimensions
 
 ### realToScreen()
 - [x] Calculates screen point for standard coordinate
 - [x] Calculates screen point with custom offset
-- [ ] Handles origin point correctly
-- [ ] Handles negative x values
-- [ ] Applies custom offset parameter
-- [ ] Uses default offset of -12.7mm when not specified
-- [ ] Is inverse of screenToRealPoint (round trip)
-- [ ] Centers x=0 at canvas centerx
+- [x] Handles origin point correctly
+- [x] Handles negative x values
+- [x] Applies custom offset parameter
+- [x] Uses default offset of -12.7mm when not specified
+- [x] Is inverse of screenToRealPoint (round trip)
+- [x] Centers x=0 at canvas centerx
 
 ### screenToReal()
 - [x] Calculates real coordinates from screen coordinates
-- [ ] Returns THREE.Vector2 instances
-- [ ] Handles empty control points array
-- [ ] Handles single control point
-- [ ] Handles many control points (7+)
-- [ ] Preserves relative positions between control points
+- [x] Returns THREE.Vector2 instances
+- [x] Handles empty control points array
+- [x] Handles single control point
+- [x] Handles many control points (7+)
+- [x] Preserves relative positions between control points
 
 ### calcBezPath()
 - [x] Calculates bezier path points
-- [ ] Starts path at origin (0,0)
-- [ ] Includes 2.5mm offset point after origin
-- [ ] Ends path at last control point
-- [ ] Returns screen coordinates when real=false
-- [ ] Produces more points with higher curvesegs
-- [ ] Handles multiple bezier segments
-- [ ] Follows bezier curve algorithm
-- [ ] Handles minimum 4 control points
-- [ ] Returns THREE.Vector2 instances
+- [x] Starts path at origin (0,0)
+- [x] Includes 2.5mm offset point after origin
+- [x] Ends path at last control point
+- [x] Returns screen coordinates when real=false
+- [x] Produces more points with higher curvesegs
+- [x] Handles multiple bezier segments
+- [x] Follows bezier curve algorithm
+- [x] Handles minimum 4 control points
+- [x] Returns THREE.Vector2 instances
 
 ### splitRingY()
 - [x] Calculates borders of each ring on curve
-- [ ] Returns one curve segment per ring
-- [ ] First segment includes first curve point
-- [ ] Last segment includes last curve point
-- [ ] Interpolates points at ring boundaries
-- [ ] Handles rings taller than curve segment spacing
-- [ ] Handles very thin rings
-- [ ] Handles single ring bowl
-- [ ] Handles many rings (10+)
-- [ ] Skips segments with less than 2 points
-- [ ] Preserves x,y point structure in output
-- [ ] Handles curves with varying slope
+- [x] Returns one curve segment per ring
+- [x] First segment includes first curve point
+- [x] Last segment includes last curve point
+- [x] Interpolates points at ring boundaries
+- [x] Handles rings taller than curve segment spacing
+- [x] Handles very thin rings
+- [x] Handles single ring bowl
+- [x] Handles many rings (10+)
+- [x] Skips segments with less than 2 points
+- [x] Preserves x,y point structure in output
+- [x] Handles curves with varying slope
 
 ### offsetCurve()
 - [x] Calculates inner and outer bowl wall
-- [ ] c1 is inner wall offset inward
-- [ ] c2 is outer wall offset outward
-- [ ] c2 closes gap to c1 at end
-- [ ] Offset distance is exact
-- [ ] Handles zero offset
-- [ ] Handles large offset values
-- [ ] Handles small offset values
-- [ ] Offset is perpendicular to curve direction
-- [ ] Handles horizontal curve segments
-- [ ] Handles vertical curve segments
-- [ ] Handles diagonal curve segments
-- [ ] Returns THREE.Vector2 instances
-- [ ] Handles minimum curve (2 points)
-- [ ] Handles identical consecutive points gracefully
+- [x] c1 is inner wall offset inward
+- [x] c2 is outer wall offset outward
+- [x] c2 closes gap to c1 at end
+- [x] Offset distance is exact
+- [x] Handles zero offset
+- [x] Handles large offset values
+- [x] Handles small offset values
+- [x] Offset is perpendicular to curve direction
+- [x] Handles horizontal curve segments
+- [x] Handles vertical curve segments
+- [x] Handles diagonal curve segments
+- [x] Returns THREE.Vector2 instances
+- [x] Handles minimum curve (2 points)
+- [x] Handles identical consecutive points gracefully
 
 ---
 

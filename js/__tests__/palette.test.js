@@ -2,8 +2,10 @@ import {
     woodcolors, 
     brightcolors, 
     rgbToHex, 
-    getWoodByColor, 
+    getWoodByColor,
+    getColorName,
     getWoodColorKeys,
+    getBrightColorKeys,
     isWoodColor 
 } from '../palette.js';
 
@@ -58,25 +60,50 @@ describe('woodcolors', () => {
 });
 
 // =============================================================================
-// TEST CASES FOR: brightcolors Array
+// TEST CASES FOR: brightcolors Map
 // =============================================================================
 describe('brightcolors', () => {
     it('contains 20 bright colors', () => {
-        expect(brightcolors.length).toBe(20);
+        expect(brightcolors.size).toBe(20);
+    });
+
+    it('has all expected color names', () => {
+        const expectedNames = [
+            'red', 'orange', 'yellow', 'lime', 'spring green',
+            'cyan', 'sky blue', 'blue', 'magenta', 'burgundy',
+            'salmon', 'peach', 'cream', 'chartreuse', 'mint',
+            'aquamarine', 'light blue', 'periwinkle', 'lavender', 'black'
+        ];
+        const actualNames = Array.from(brightcolors.values());
+        expectedNames.forEach(name => {
+            expect(actualNames).toContain(name);
+        });
     });
 
     it('has valid hex color format for all entries', () => {
         const hexRegex = /^#[0-9A-F]{6}$/;
-        brightcolors.forEach(color => {
+        for (const [color, name] of brightcolors) {
             expect(color).toMatch(hexRegex);
-        });
+        }
     });
 
-    it('includes basic colors', () => {
-        expect(brightcolors).toContain('#FF0000'); // red
-        expect(brightcolors).toContain('#00FF80'); // green variant
-        expect(brightcolors).toContain('#0000FF'); // blue
-        expect(brightcolors).toContain('#000000'); // black
+    it('has unique colors (no duplicates)', () => {
+        const colors = Array.from(brightcolors.keys());
+        const uniqueColors = new Set(colors);
+        expect(uniqueColors.size).toBe(colors.length);
+    });
+
+    it('has unique color names (no duplicates)', () => {
+        const names = Array.from(brightcolors.values());
+        const uniqueNames = new Set(names);
+        expect(uniqueNames.size).toBe(names.length);
+    });
+
+    it('includes basic colors with correct names', () => {
+        expect(brightcolors.get('#FF0000')).toBe('red');
+        expect(brightcolors.get('#0000FF')).toBe('blue');
+        expect(brightcolors.get('#FFFF00')).toBe('yellow');
+        expect(brightcolors.get('#000000')).toBe('black');
     });
 });
 
@@ -230,6 +257,66 @@ describe('getWoodByColor', () => {
 });
 
 // =============================================================================
+// TEST CASES FOR: getColorName
+// =============================================================================
+describe('getColorName', () => {
+    describe('finds wood colors', () => {
+        it('returns maple for its hex color', () => {
+            expect(getColorName('#E2CAA0')).toBe('maple');
+        });
+
+        it('returns walnut for its RGB color', () => {
+            expect(getColorName('rgb(123, 79, 52)')).toBe('walnut');
+        });
+    });
+
+    describe('finds bright colors', () => {
+        it('returns red for #FF0000', () => {
+            expect(getColorName('#FF0000')).toBe('red');
+        });
+
+        it('returns magenta for its RGB color', () => {
+            expect(getColorName('rgb(255, 0, 255)')).toBe('magenta');
+        });
+
+        it('returns blue for #0000FF', () => {
+            expect(getColorName('#0000FF')).toBe('blue');
+        });
+
+        it('returns black for #000000', () => {
+            expect(getColorName('#000000')).toBe('black');
+        });
+
+        it('handles lowercase hex for bright colors', () => {
+            expect(getColorName('#ff0000')).toBe('red');
+            expect(getColorName('#00ffff')).toBe('cyan');
+        });
+    });
+
+    describe('returns unknown for unrecognized colors', () => {
+        it('returns unknown for arbitrary hex', () => {
+            expect(getColorName('#123456')).toBe('unknown');
+        });
+
+        it('returns unknown for arbitrary RGB', () => {
+            expect(getColorName('rgb(100, 100, 100)')).toBe('unknown');
+        });
+    });
+
+    describe('prefers wood colors over bright colors', () => {
+        // This test documents behavior if there were any color conflicts
+        // Currently there are no overlapping colors between wood and bright
+        it('checks wood colors first', () => {
+            // Verify no overlap exists
+            const woodKeys = Array.from(woodcolors.keys());
+            const brightKeys = Array.from(brightcolors.keys());
+            const overlap = woodKeys.filter(k => brightKeys.includes(k));
+            expect(overlap.length).toBe(0);
+        });
+    });
+});
+
+// =============================================================================
 // TEST CASES FOR: getWoodColorKeys
 // =============================================================================
 describe('getWoodColorKeys', () => {
@@ -251,6 +338,33 @@ describe('getWoodColorKeys', () => {
     it('returns a new array instance each time', () => {
         const keys1 = getWoodColorKeys();
         const keys2 = getWoodColorKeys();
+        expect(keys1).not.toBe(keys2);
+        expect(keys1).toEqual(keys2);
+    });
+});
+
+// =============================================================================
+// TEST CASES FOR: getBrightColorKeys
+// =============================================================================
+describe('getBrightColorKeys', () => {
+    it('returns an array', () => {
+        expect(Array.isArray(getBrightColorKeys())).toBe(true);
+    });
+
+    it('returns 20 color keys', () => {
+        expect(getBrightColorKeys().length).toBe(20);
+    });
+
+    it('returns all hex colors from brightcolors map', () => {
+        const keys = getBrightColorKeys();
+        for (const [color] of brightcolors) {
+            expect(keys).toContain(color);
+        }
+    });
+
+    it('returns a new array instance each time', () => {
+        const keys1 = getBrightColorKeys();
+        const keys2 = getBrightColorKeys();
         expect(keys1).not.toBe(keys2);
         expect(keys1).toEqual(keys2);
     });

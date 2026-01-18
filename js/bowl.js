@@ -10,7 +10,7 @@ import { screenToRealPoint, realToScreen, screenToReal, calcBezPath, splitRingY,
 import { calcRings } from './ring_calculator.js';
 import { createReport, getReportSegsList } from './report.js';
 import { clearCanvas, drawCurve, drawRing, drawSegProfile } from './drawing.js';
-import { woodcolors, brightcolors, getWoodByColor, getWoodColorKeys } from './palette.js';
+import { woodcolors, brightcolors, getWoodByColor, getColorName, getWoodColorKeys, getBrightColorKeys } from './palette.js';
 import * as PERSISTENCE from './persistence.js';
 
 (() => {
@@ -807,24 +807,23 @@ import * as PERSISTENCE from './persistence.js';
 
     function showPalette() {
         const woodcolorKeys = getWoodColorKeys();
+        const brightcolorKeys = getBrightColorKeys();
 
         el("colortype").onchange =
             function (event) {
                 let clist;
+                let colorMap;
                 if (event.target.value === "wood") {
                     clist = woodcolorKeys;
+                    colorMap = woodcolors;
                 } else {
-                    clist = brightcolors;
+                    clist = brightcolorKeys;
+                    colorMap = brightcolors;
                 }
                 const buttons = document.getElementsByClassName("clrsel");
                 for (let i = 0; i < clist.length; i++) {
                     buttons[i].style.backgroundColor = clist[i];
-                    // Update title for wood colors
-                    if (event.target.value === "wood") {
-                        buttons[i].title = woodcolors.get(clist[i]);
-                    } else {
-                        buttons[i].title = "";
-                    }
+                    buttons[i].title = colorMap.get(clist[i]);
                 }
             };
 
@@ -947,7 +946,7 @@ import * as PERSISTENCE from './persistence.js';
             const btn = document.createElement("button");
             btn.className = "clrbtn";
             btn.style.backgroundColor = tmppalette[i].style.backgroundColor;
-            btn.title = getWoodByColor(tmppalette[i].style.backgroundColor);
+            btn.title = getColorName(tmppalette[i].style.backgroundColor);
             btn.onclick = colorChange;
             paletteContainer.appendChild(btn);
         }

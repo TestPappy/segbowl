@@ -26,12 +26,29 @@ export const woodcolors = new Map([
     ['#342022', 'ebony']
 ]);
 
-// Bright colors for non-wood palette option
-export const brightcolors = [
-    "#FF0000", "#FF8000", "#FFFF00", "#80FF00", "#00FF80", "#00FFFF", "#0080FF",
-    "#0000FF", "#FF00FF", "#800040", "#FF6666", "#FFCC66", "#FFFF66", "#CCFF66",
-    "#66FF66", "#66FFCC", "#66CCFF", "#6666FF", "#CC66FF", "#000000"
-];
+// Bright colors map: hex color -> color name
+export const brightcolors = new Map([
+    ['#FF0000', 'red'],
+    ['#FF8000', 'orange'],
+    ['#FFFF00', 'yellow'],
+    ['#80FF00', 'lime'],
+    ['#00FF80', 'spring green'],
+    ['#00FFFF', 'cyan'],
+    ['#0080FF', 'sky blue'],
+    ['#0000FF', 'blue'],
+    ['#FF00FF', 'magenta'],
+    ['#800040', 'burgundy'],
+    ['#FF6666', 'salmon'],
+    ['#FFCC66', 'peach'],
+    ['#FFFF66', 'cream'],
+    ['#CCFF66', 'chartreuse'],
+    ['#66FF66', 'mint'],
+    ['#66FFCC', 'aquamarine'],
+    ['#66CCFF', 'light blue'],
+    ['#6666FF', 'periwinkle'],
+    ['#CC66FF', 'lavender'],
+    ['#000000', 'black']
+]);
 
 /**
  * Convert RGB color string to hex format
@@ -63,10 +80,24 @@ export function getWoodByColor(clr) {
     const hex = rgbToHex(clr);
     if (woodcolors.has(hex)) {
         return woodcolors.get(hex);
-    } else {
-        console.log("No match for: " + clr + " (hex: " + hex + ")");
-        return "unknown";
     }
+    return "unknown";
+}
+
+/**
+ * Get color name by color value (checks both wood and bright colors)
+ * @param {string} clr - Color in RGB or hex format
+ * @returns {string} Color name or "unknown" if not found
+ */
+export function getColorName(clr) {
+    const hex = rgbToHex(clr);
+    if (woodcolors.has(hex)) {
+        return woodcolors.get(hex);
+    }
+    if (brightcolors.has(hex)) {
+        return brightcolors.get(hex);
+    }
+    return "unknown";
 }
 
 /**
@@ -75,6 +106,14 @@ export function getWoodByColor(clr) {
  */
 export function getWoodColorKeys() {
     return Array.from(woodcolors.keys());
+}
+
+/**
+ * Get all bright color hex values as an array
+ * @returns {string[]} Array of hex color strings
+ */
+export function getBrightColorKeys() {
+    return Array.from(brightcolors.keys());
 }
 
 /**

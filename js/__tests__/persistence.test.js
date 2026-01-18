@@ -81,41 +81,120 @@ describe('saveDesignAndSettings', () => {
         localStorage.setItem.mockClear();
     });
 
-    /**
-     * TEST CASE: Should add timestamp to bowlprop
-     */
-    it.todo('adds timestamp to bowlprop before saving');
+    it('adds timestamp to bowlprop before saving', () => {
+        const bowlprop = { test: "value" };
+        const ctrl = { inch: false };
+        
+        saveDesignAndSettings(bowlprop, ctrl);
+        
+        // bowlprop should now have a timestamp property
+        expect(bowlprop.timestamp).toBeDefined();
+    });
 
-    /**
-     * TEST CASE: Timestamp should be valid ISO date string
-     */
-    it.todo('timestamp is valid ISO date string');
+    it('timestamp is valid ISO date string', () => {
+        const bowlprop = { test: "value" };
+        const ctrl = { inch: false };
+        
+        saveDesignAndSettings(bowlprop, ctrl);
+        
+        // Should be a valid ISO date string
+        const timestamp = bowlprop.timestamp;
+        const parsed = new Date(timestamp);
+        expect(parsed.toJSON()).toBe(timestamp);
+        expect(isNaN(parsed.getTime())).toBe(false);
+    });
 
-    /**
-     * TEST CASE: Should preserve all bowlprop properties
-     */
-    it.todo('preserves all bowlprop properties');
+    it('preserves all bowlprop properties', () => {
+        const bowlprop = {
+            thick: 6,
+            pad: 3,
+            height: 100,
+            radius: 80,
+            curvesegs: 50
+        };
+        const ctrl = { inch: false };
+        
+        saveDesignAndSettings(bowlprop, ctrl);
+        
+        const saved = JSON.parse(localStorage.getItem("bowlDesign"));
+        expect(saved.thick).toBe(6);
+        expect(saved.pad).toBe(3);
+        expect(saved.height).toBe(100);
+        expect(saved.radius).toBe(80);
+        expect(saved.curvesegs).toBe(50);
+    });
 
-    /**
-     * TEST CASE: Should preserve all ctrl properties
-     */
-    it.todo('preserves all ctrl properties');
+    it('preserves all ctrl properties', () => {
+        const bowlprop = { test: "value" };
+        const ctrl = {
+            inch: true,
+            sawkerf: 3.2,
+            step: 0.0625,
+            selring: 2,
+            selseg: [1, 3, 5]
+        };
+        
+        saveDesignAndSettings(bowlprop, ctrl);
+        
+        const saved = JSON.parse(localStorage.getItem("bowlSettings"));
+        expect(saved.inch).toBe(true);
+        expect(saved.sawkerf).toBe(3.2);
+        expect(saved.step).toBe(0.0625);
+        expect(saved.selring).toBe(2);
+        expect(saved.selseg).toEqual([1, 3, 5]);
+    });
 
-    /**
-     * TEST CASE: Should handle complex nested objects
-     * - rings array with nested objects
-     */
-    it.todo('handles complex nested objects');
+    it('handles complex nested objects', () => {
+        const bowlprop = {
+            rings: [
+                { height: 19, segs: 12, clrs: ['#FF0000', '#00FF00'], xvals: { min: 30, max: 50 } },
+                { height: 19, segs: 8, clrs: ['#0000FF'], xvals: { min: 40, max: 60 } }
+            ],
+            cpoint: [
+                { x: 100, y: 200 },
+                { x: 150, y: 250 }
+            ]
+        };
+        const ctrl = { inch: false };
+        
+        saveDesignAndSettings(bowlprop, ctrl);
+        
+        const saved = JSON.parse(localStorage.getItem("bowlDesign"));
+        expect(saved.rings.length).toBe(2);
+        expect(saved.rings[0].clrs).toEqual(['#FF0000', '#00FF00']);
+        expect(saved.rings[0].xvals.min).toBe(30);
+        expect(saved.cpoint[1].y).toBe(250);
+    });
 
-    /**
-     * TEST CASE: Should handle empty arrays in bowlprop
-     */
-    it.todo('handles empty arrays in bowlprop');
+    it('handles empty arrays in bowlprop', () => {
+        const bowlprop = {
+            rings: [],
+            cpoint: [],
+            emptyData: []
+        };
+        const ctrl = { inch: false };
+        
+        saveDesignAndSettings(bowlprop, ctrl);
+        
+        const saved = JSON.parse(localStorage.getItem("bowlDesign"));
+        expect(saved.rings).toEqual([]);
+        expect(saved.cpoint).toEqual([]);
+        expect(saved.emptyData).toEqual([]);
+    });
 
-    /**
-     * TEST CASE: Should overwrite existing saved design
-     */
-    it.todo('overwrites existing saved design');
+    it('overwrites existing saved design', () => {
+        const bowlprop1 = { version: 1 };
+        const bowlprop2 = { version: 2 };
+        const ctrl = { inch: false };
+        
+        saveDesignAndSettings(bowlprop1, ctrl);
+        const saved1 = JSON.parse(localStorage.getItem("bowlDesign"));
+        expect(saved1.version).toBe(1);
+        
+        saveDesignAndSettings(bowlprop2, ctrl);
+        const saved2 = JSON.parse(localStorage.getItem("bowlDesign"));
+        expect(saved2.version).toBe(2);
+    });
 });
 
 // =============================================================================
@@ -126,25 +205,51 @@ describe('loadDesign', () => {
         localStorage.clear();
     });
 
-    /**
-     * TEST CASE: Should return null when no design exists
-     */
-    it.todo('returns null when no design exists');
+    it('returns null when no design exists', () => {
+        const result = loadDesign();
+        expect(result).toBeNull();
+    });
 
-    /**
-     * TEST CASE: Should handle corrupted JSON gracefully
-     */
-    it.todo('handles corrupted JSON gracefully');
+    it('handles corrupted JSON gracefully', () => {
+        localStorage.setItem("bowlDesign", "{ invalid json }}}");
+        
+        // Should not throw and return null
+        expect(() => loadDesign()).not.toThrow();
+        const result = loadDesign();
+        expect(result).toBeNull();
+    });
 
-    /**
-     * TEST CASE: Should preserve all saved properties
-     */
-    it.todo('preserves all saved properties on load');
+    it('preserves all saved properties on load', () => {
+        const original = {
+            thick: 6,
+            pad: 3,
+            height: 100,
+            radius: 80,
+            timestamp: "2024-01-15T10:30:00.000Z"
+        };
+        localStorage.setItem("bowlDesign", JSON.stringify(original));
+        
+        const loaded = loadDesign();
+        expect(loaded.thick).toBe(6);
+        expect(loaded.pad).toBe(3);
+        expect(loaded.height).toBe(100);
+        expect(loaded.radius).toBe(80);
+        expect(loaded.timestamp).toBe("2024-01-15T10:30:00.000Z");
+    });
 
-    /**
-     * TEST CASE: Should parse nested objects correctly
-     */
-    it.todo('parses nested objects correctly');
+    it('parses nested objects correctly', () => {
+        const original = {
+            rings: [
+                { height: 19, xvals: { min: 30, max: 50 } }
+            ],
+            cpoint: [{ x: 100, y: 200 }]
+        };
+        localStorage.setItem("bowlDesign", JSON.stringify(original));
+        
+        const loaded = loadDesign();
+        expect(loaded.rings[0].xvals.min).toBe(30);
+        expect(loaded.cpoint[0].x).toBe(100);
+    });
 });
 
 // =============================================================================
@@ -155,27 +260,44 @@ describe('loadSettings', () => {
         localStorage.clear();
     });
 
-    /**
-     * TEST CASE: Should return null when no settings exist
-     */
-    it.todo('returns null when no settings exist');
+    it('returns null when no settings exist', () => {
+        const result = loadSettings();
+        expect(result).toBeNull();
+    });
 
-    /**
-     * TEST CASE: Should handle corrupted JSON gracefully
-     */
-    it.todo('handles corrupted JSON gracefully');
+    it('handles corrupted JSON gracefully', () => {
+        localStorage.setItem("bowlSettings", "not valid json at all");
+        
+        // Should not throw and return null
+        expect(() => loadSettings()).not.toThrow();
+        const result = loadSettings();
+        expect(result).toBeNull();
+    });
 
-    /**
-     * TEST CASE: Should preserve boolean values correctly
-     * - inch: true/false
-     */
-    it.todo('preserves boolean values correctly');
+    it('preserves boolean values correctly', () => {
+        const original = { inch: true, otherBool: false };
+        localStorage.setItem("bowlSettings", JSON.stringify(original));
+        
+        const loaded = loadSettings();
+        expect(loaded.inch).toBe(true);
+        expect(loaded.otherBool).toBe(false);
+    });
 
-    /**
-     * TEST CASE: Should preserve number values correctly
-     * - sawkerf, step
-     */
-    it.todo('preserves number values correctly');
+    it('preserves number values correctly', () => {
+        const original = {
+            sawkerf: 3.2,
+            step: 0.0625,
+            intValue: 42,
+            negValue: -5.5
+        };
+        localStorage.setItem("bowlSettings", JSON.stringify(original));
+        
+        const loaded = loadSettings();
+        expect(loaded.sawkerf).toBe(3.2);
+        expect(loaded.step).toBe(0.0625);
+        expect(loaded.intValue).toBe(42);
+        expect(loaded.negValue).toBe(-5.5);
+    });
 });
 
 // =============================================================================
@@ -186,25 +308,34 @@ describe('checkStorage', () => {
         localStorage.clear();
     });
 
-    /**
-     * TEST CASE: Should return null when no design exists
-     */
-    it.todo('returns null when no design exists');
+    it('returns null when no design exists', () => {
+        const result = checkStorage();
+        expect(result).toBeNull();
+    });
 
-    /**
-     * TEST CASE: Should return null when design has no timestamp
-     */
-    it.todo('returns null when design has no timestamp');
+    it('returns null when design has no timestamp', () => {
+        localStorage.setItem("bowlDesign", JSON.stringify({ test: "value" }));
+        
+        const result = checkStorage();
+        expect(result).toBeNull();
+    });
 
-    /**
-     * TEST CASE: Should handle corrupted JSON gracefully
-     */
-    it.todo('handles corrupted JSON gracefully');
+    it('handles corrupted JSON gracefully', () => {
+        localStorage.setItem("bowlDesign", "corrupted{{{");
+        
+        // Should not throw and return null
+        expect(() => checkStorage()).not.toThrow();
+        const result = checkStorage();
+        expect(result).toBeNull();
+    });
 
-    /**
-     * TEST CASE: Should return exact timestamp string
-     */
-    it.todo('returns exact timestamp string from saved design');
+    it('returns exact timestamp string from saved design', () => {
+        const timestamp = "2024-06-15T14:30:00.123Z";
+        localStorage.setItem("bowlDesign", JSON.stringify({ timestamp }));
+        
+        const result = checkStorage();
+        expect(result).toBe(timestamp);
+    });
 });
 
 // =============================================================================
@@ -216,23 +347,39 @@ describe('clearDesignAndSettings', () => {
         localStorage.removeItem.mockClear();
     });
 
-    /**
-     * TEST CASE: Should remove bowlDesign key
-     */
-    it.todo('removes bowlDesign key');
+    it('removes bowlDesign key', () => {
+        localStorage.setItem("bowlDesign", JSON.stringify({ test: "value" }));
+        
+        clearDesignAndSettings();
+        
+        expect(localStorage.removeItem).toHaveBeenCalledWith("bowlDesign");
+        expect(localStorage.getItem("bowlDesign")).toBeNull();
+    });
 
-    /**
-     * TEST CASE: Should remove bowlSettings key
-     */
-    it.todo('removes bowlSettings key');
+    it('removes bowlSettings key', () => {
+        localStorage.setItem("bowlSettings", JSON.stringify({ inch: true }));
+        
+        clearDesignAndSettings();
+        
+        expect(localStorage.removeItem).toHaveBeenCalledWith("bowlSettings");
+        expect(localStorage.getItem("bowlSettings")).toBeNull();
+    });
 
-    /**
-     * TEST CASE: Should not throw when storage is empty
-     */
-    it.todo('does not throw when storage is already empty');
+    it('does not throw when storage is already empty', () => {
+        // Storage is empty
+        expect(() => clearDesignAndSettings()).not.toThrow();
+        expect(localStorage.removeItem).toHaveBeenCalledTimes(2);
+    });
 
-    /**
-     * TEST CASE: Should not affect other localStorage keys
-     */
-    it.todo('does not affect other localStorage keys');
+    it('does not affect other localStorage keys', () => {
+        localStorage.setItem("bowlDesign", JSON.stringify({ test: "value" }));
+        localStorage.setItem("bowlSettings", JSON.stringify({ inch: true }));
+        localStorage.setItem("otherKey", "should remain");
+        localStorage.setItem("anotherKey", "also remains");
+        
+        clearDesignAndSettings();
+        
+        expect(localStorage.getItem("otherKey")).toBe("should remain");
+        expect(localStorage.getItem("anotherKey")).toBe("also remains");
+    });
 });

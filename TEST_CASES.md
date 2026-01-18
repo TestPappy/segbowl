@@ -9,10 +9,10 @@ This document lists all test cases to be implemented for comprehensive test cove
 | `common.test.js` | 42 ✅ | 0 | 42 |
 | `bowl_calculator.test.js` | 59 ✅ | 0 | 59 |
 | `ring_calculator.test.js` | 37 ✅ | 0 | 37 |
-| `persistence.test.js` | 5 | 26 | 31 |
-| `drawing.test.js` | 0 | 28 | 28 |
+| `persistence.test.js` | 28 ✅ | 0 | 28 |
+| `drawing.test.js` | 27 ✅ | 0 | 27 |
 | `report.test.js` | 33 ✅ | 0 | 33 |
-| **Total** | **176** | **54** | **230** |
+| **Total** | **226** | **0** | **226** |
 
 ---
 
@@ -200,84 +200,84 @@ This document lists all test cases to be implemented for comprehensive test cove
 
 ---
 
-## 4. persistence.test.js
+## 4. persistence.test.js ✅ COMPLETE
 
 ### saveDesignAndSettings()
 - [x] Saves design to localStorage
-- [ ] Adds timestamp to bowlprop before saving
-- [ ] Timestamp is valid ISO date string
-- [ ] Preserves all bowlprop properties
-- [ ] Preserves all ctrl properties
-- [ ] Handles complex nested objects
-- [ ] Handles empty arrays in bowlprop
-- [ ] Overwrites existing saved design
+- [x] Adds timestamp to bowlprop before saving
+- [x] Timestamp is valid ISO date string
+- [x] Preserves all bowlprop properties
+- [x] Preserves all ctrl properties
+- [x] Handles complex nested objects
+- [x] Handles empty arrays in bowlprop
+- [x] Overwrites existing saved design
 
 ### loadDesign()
 - [x] Loads existing design
-- [ ] Returns null when no design exists
-- [ ] Handles corrupted JSON gracefully
-- [ ] Preserves all saved properties on load
-- [ ] Parses nested objects correctly
+- [x] Returns null when no design exists
+- [x] Handles corrupted JSON gracefully
+- [x] Preserves all saved properties on load
+- [x] Parses nested objects correctly
 
 ### loadSettings()
 - [x] Loads existing settings
-- [ ] Returns null when no settings exist
-- [ ] Handles corrupted JSON gracefully
-- [ ] Preserves boolean values correctly
-- [ ] Preserves number values correctly
+- [x] Returns null when no settings exist
+- [x] Handles corrupted JSON gracefully
+- [x] Preserves boolean values correctly
+- [x] Preserves number values correctly
 
 ### checkStorage()
 - [x] Checks for existing design timestamp
-- [ ] Returns null when no design exists
-- [ ] Returns null when design has no timestamp
-- [ ] Handles corrupted JSON gracefully
-- [ ] Returns exact timestamp string from saved design
+- [x] Returns null when no design exists
+- [x] Returns null when design has no timestamp
+- [x] Handles corrupted JSON gracefully
+- [x] Returns exact timestamp string from saved design
 
 ### clearDesignAndSettings()
 - [x] Removes design and settings from localStorage
-- [ ] Removes bowlDesign key
-- [ ] Removes bowlSettings key
-- [ ] Does not throw when storage is already empty
-- [ ] Does not affect other localStorage keys
+- [x] Removes bowlDesign key
+- [x] Removes bowlSettings key
+- [x] Does not throw when storage is already empty
+- [x] Does not affect other localStorage keys
 
 ---
 
-## 5. drawing.test.js (NEW)
+## 5. drawing.test.js ✅ COMPLETE
 
 ### clearCanvas()
-- [ ] Creates a gradient background from lightblue to lightgray
-- [ ] Fills the entire canvas area
-- [ ] Handles different canvas dimensions
-- [ ] Creates gradient in correct vertical direction
+- [x] Creates a gradient background from lightblue to lightgray
+- [x] Fills the entire canvas area
+- [x] Handles different canvas dimensions
+- [x] Creates gradient in correct vertical direction
 
 ### drawCurve()
-- [ ] Sets line width proportional to bowl thickness
-- [ ] Applies curve color from style
-- [ ] Draws bezier curves through all control points
-- [ ] Draws mirrored curve on left side of center
-- [ ] Starts curve from center bottom of canvas
-- [ ] Handles minimum control points (single bezier)
-- [ ] Handles multiple bezier segments
+- [x] Sets line width proportional to bowl thickness
+- [x] Applies curve color from style
+- [x] Draws bezier curves through all control points
+- [x] Draws mirrored curve on left side of center
+- [x] Starts curve from center bottom of canvas
+- [x] Handles minimum control points (single bezier)
+- [x] Handles multiple bezier segments
 
 ### drawSegProfile()
-- [ ] Highlights selected ring with selection style
-- [ ] Highlights copied ring with copy style
-- [ ] Uses default style for unselected rings
-- [ ] Draws rectangle for each ring
-- [ ] Positions rings correctly in vertical stack
-- [ ] Only draws rings within bowl height bounds
-- [ ] Displays ring numbers when option is enabled
-- [ ] Recalculates ring dimensions before drawing
+- [x] Highlights selected ring with selection style
+- [x] Highlights copied ring with copy style
+- [x] Uses default style for unselected rings
+- [x] Draws rectangle for each ring
+- [x] Positions rings correctly in vertical stack
+- [x] Only draws rings within bowl height bounds
+- [x] Displays ring numbers when option is enabled
+- [x] Recalculates ring dimensions before drawing
 
 ### drawRing()
-- [ ] Draws polygon for each segment in ring
-- [ ] Fills segments with assigned colors
-- [ ] Highlights selected segments with selection style
-- [ ] Draws inner and outer boundary circles
-- [ ] Applies padding to boundary circles
-- [ ] Calculates trapezoid shapes before drawing
-- [ ] Handles various segment counts correctly
-- [ ] Handles segments with varying lengths
+- [x] Draws polygon for each segment in ring
+- [x] Fills segments with assigned colors
+- [x] Highlights selected segments with selection style
+- [x] Draws inner and outer boundary circles
+- [x] Applies padding to boundary circles
+- [x] Calculates trapezoid shapes before drawing
+- [x] Handles various segment counts correctly
+- [x] Handles segments with varying lengths
 
 ---
 

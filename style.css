@@ -1,6 +1,6 @@
 body {
     font-family: verdana;
-    font-size: 12px;
+    font-size: 14px;
     background-color: #444444;
     color: #CCCCCC;
 }
@@ -11,7 +11,7 @@ a:visited{color: #888888;}
 
 h1, h2 {
     color: #EEEEEE;
-    font-size: 22px;
+    font-size: 25px;
     text-align: center;
     page-break-before:always;
 }
@@ -25,11 +25,11 @@ h3:first-of-type {
 }
 
 p {
-    font-size: 12px;
+    font-size: 14px;
 }
 
 table, th, td {
-    font-size: 12px;
+    font-size: 14px;
     border: 1px solid black;
     border-collapse: collapse;
     padding: 5px 10px;
@@ -147,7 +147,7 @@ select {
    background: transparent;
       width: 120%;
    padding: 4px;
-   font-size: 12px;
+   font-size: 14px;
    color: #CCCCCC;
    -webkit-appearance: none;
    }
@@ -287,7 +287,7 @@ input[type="text"] {
     align-items: center;
     justify-content: center;
     color: #888888;
-    font-size: 10px;
+    font-size: 12px;
 }
 .version-info {
     flex: 1;
@@ -298,11 +298,11 @@ input[type="text"] {
     margin-bottom: 4px;
 }
 .version-info .version-date {
-    font-size: 11px;
+    font-size: 13px;
     color: #AAAAAA;
 }
 .version-info .version-details {
-    font-size: 11px;
+    font-size: 13px;
     color: #888888;
     margin-top: 4px;
 }
@@ -314,4 +314,21 @@ input[type="text"] {
     text-align: center;
     color: #888888;
     padding: 20px;
+}
+
+/* Report page styles - 3pt larger than original */
+body.report {
+    font-size: 15px;
+    background-color: white;
+    color: black;
+}
+body.report h1, body.report h2 {
+    font-size: 25px;
+    color: black;
+}
+body.report p {
+    font-size: 15px;
+}
+body.report table, body.report th, body.report td {
+    font-size: 15px;
 }

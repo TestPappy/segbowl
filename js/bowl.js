@@ -10,6 +10,7 @@ import { screenToRealPoint, realToScreen, screenToReal, calcBezPath, splitRingY,
 import { calcRings } from './ring_calculator.js';
 import { createReport, getReportSegsList } from './report.js';
 import { clearCanvas, drawCurve, drawRing, drawSegProfile } from './drawing.js';
+import { woodcolors, brightcolors, getWoodByColor, getWoodColorKeys } from './palette.js';
 import * as PERSISTENCE from './persistence.js';
 
 (() => {
@@ -804,51 +805,44 @@ import * as PERSISTENCE from './persistence.js';
         createReport(nwindow, bowlprop, step, ctrl, view2d, view3d, style);
     }
 
-    function getWoodByColor(clr) {
-        const woodByColorMap = new Map();
-        woodByColorMap.set('rgb(226, 202, 160)', 'maple');  //#E2CAA0
-        woodByColorMap.set('rgb(173, 116, 63)', 'beech');   //#AD743F
-        woodByColorMap.set('rgb(153, 80, 24)', 'cherry');   //#995018
-        woodByColorMap.set('rgb(123, 79, 52)', 'walnut');   //#7B4F34
-        woodByColorMap.set('rgb(98, 51, 41)', 'teak');      //#623329
-        woodByColorMap.set('rgb(68, 37, 43)', 'cocobolo');  //#E2CAA0
-        woodByColorMap.set('rgb(132, 62, 75)', 'amaranth'); //#843E4B
-        if (woodByColorMap.has(clr)) {
-            return woodByColorMap.get(clr);
-        } else {
-            console.log("No match for: " + clr);
-            return "unknown";
-        }
-    }
-
     function showPalette() {
-        const woodcolors = [
-            '#FDFAF4', '#E2CAA0', '#C29A1F', '#C98753', '#AC572F', '#995018', '#7B4F34',
-            '#6E442E', '#623329', '#51240D', '#EFEBE0', '#EFB973', '#AD743F', '#965938',
-            '#884B2F', '#7C3826', '#843E4B', '#582824', '#44252B', '#342022'
-        ];
-        const brightcolors = [
-            "#FF0000", "#FF8000", "#FFFF00", "#80FF00", "#00FF80", "#00FFFF", "#0080FF",
-            "#0000FF", "#FF00FF", "#800040", "#FF6666", "#FFCC66", "#FFFF66", "#CCFF66",
-            "#66FF66", "#66FFCC", "#66CCFF", "#6666FF", "#CC66FF", "#000000"
-        ];
+        const woodcolorKeys = getWoodColorKeys();
 
         el("colortype").onchange =
             function (event) {
                 let clist;
                 if (event.target.value === "wood") {
-                    clist = woodcolors;
+                    clist = woodcolorKeys;
                 } else {
                     clist = brightcolors;
                 }
                 const buttons = document.getElementsByClassName("clrsel");
-                for (const i in clist) {
+                for (let i = 0; i < clist.length; i++) {
                     buttons[i].style.backgroundColor = clist[i];
+                    // Update title for wood colors
+                    if (event.target.value === "wood") {
+                        buttons[i].title = woodcolors.get(clist[i]);
+                    } else {
+                        buttons[i].title = "";
+                    }
                 }
             };
 
         function dragclr(ev) {
             ev.dataTransfer.setData("text", ev.target.style.backgroundColor);
+            ev.dataTransfer.setData("source", "colorpicker");
+        }
+
+        function dragPaletteItem(ev) {
+            ev.dataTransfer.setData("text", ev.target.style.backgroundColor);
+            ev.dataTransfer.setData("source", "palette");
+            ev.dataTransfer.effectAllowed = "move";
+            // Store reference to the dragged element
+            ev.target.classList.add("dragging");
+        }
+
+        function dragEndPaletteItem(ev) {
+            ev.target.classList.remove("dragging");
         }
 
         function dragover(ev) {
@@ -861,42 +855,103 @@ import * as PERSISTENCE from './persistence.js';
             ev.target.style.backgroundColor = clr;
         }
 
+        function dropToTrash(ev) {
+            ev.preventDefault();
+            const dragging = document.querySelector(".tmppal.dragging");
+            if (dragging) {
+                dragging.remove();
+            }
+        }
+
+        function createPaletteItem(bgColor) {
+            const c = document.createElement("span");
+            c.className = "tmppal";
+            c.style.backgroundColor = bgColor;
+            c.draggable = "true";
+            c.ondragstart = dragPaletteItem;
+            c.ondragend = dragEndPaletteItem;
+            c.ondragover = dragover;
+            c.ondrop = dropclr;
+            return c;
+        }
+
+        function addPaletteItem() {
+            const paletteContainer = document.getElementById("paletteItems");
+            // Default to first wood color
+            const defaultColor = woodcolors.keys().next().value;
+            const newItem = createPaletteItem(defaultColor);
+            paletteContainer.appendChild(newItem);
+        }
+
         el("colorselect").innerHTML = "";
         const clropts = document.createElement("p");
-        for (const i in woodcolors) {
-            if (i == woodcolors.length / 2) { clropts.appendChild(document.createElement("br")); }
+        let idx = 0;
+        for (const [hexColor, woodName] of woodcolors) {
+            if (idx == woodcolors.size / 2) { clropts.appendChild(document.createElement("br")); }
             const c = document.createElement("span");
             c.className = "clrsel";
-            c.style.backgroundColor = woodcolors[i];
+            c.style.backgroundColor = hexColor;
+            c.title = woodName;
             c.draggable = "true";
             c.ondragstart = dragclr;
             clropts.appendChild(c);
+            idx++;
         }
 
         const btnpalette = document.getElementsByClassName("clrbtn");
         const palette = document.createElement("p");
         palette.appendChild(document.createElement("hr"));
         palette.appendChild(document.createTextNode("Palette: "));
+        
+        // Container for palette items
+        const paletteItems = document.createElement("span");
+        paletteItems.id = "paletteItems";
         for (let i = 0; i < btnpalette.length; i++) {
-            const c = document.createElement("span");
-            c.className = "tmppal";
-            c.style.backgroundColor = btnpalette[i].style.backgroundColor;
-            c.ondragover = dragover;
-            c.ondrop = dropclr;
-            palette.appendChild(c);
+            paletteItems.appendChild(createPaletteItem(btnpalette[i].style.backgroundColor));
         }
+        palette.appendChild(paletteItems);
+
+        // Add button
+        const addBtn = document.createElement("button");
+        addBtn.textContent = "+";
+        addBtn.className = "hbutton";
+        addBtn.style.marginLeft = "10px";
+        addBtn.style.verticalAlign = "middle";
+        addBtn.onclick = addPaletteItem;
+        palette.appendChild(addBtn);
+
+        // Trash bin
+        const trashBin = document.createElement("span");
+        trashBin.className = "trashbin";
+        trashBin.innerHTML = "🗑";
+        trashBin.title = "Drag palette item here to delete";
+        trashBin.ondragover = dragover;
+        trashBin.ondrop = dropToTrash;
+        palette.appendChild(trashBin);
+
         el("colorselect").appendChild(clropts);
         el("colorselect").appendChild(palette);
         el("palettewindow").style.display = "block";
     }
 
     document.getElementsByClassName("close")[0].onclick = function () {
-        const btnpalette = document.getElementsByClassName("clrbtn");
         const tmppalette = document.getElementsByClassName("tmppal");
-        for (let i = 0; i < btnpalette.length; i++) {
-            btnpalette[i].style.backgroundColor = tmppalette[i].style.backgroundColor;
-            btnpalette[i].title = getWoodByColor(tmppalette[i].style.backgroundColor);
+        const paletteContainer = el("paletteButtons");
+        
+        // Remove all existing palette buttons
+        const existingButtons = paletteContainer.querySelectorAll(".clrbtn");
+        existingButtons.forEach(btn => btn.remove());
+        
+        // Create new buttons from tmppal items
+        for (let i = 0; i < tmppalette.length; i++) {
+            const btn = document.createElement("button");
+            btn.className = "clrbtn";
+            btn.style.backgroundColor = tmppalette[i].style.backgroundColor;
+            btn.title = getWoodByColor(tmppalette[i].style.backgroundColor);
+            btn.onclick = colorChange;
+            paletteContainer.appendChild(btn);
         }
+        
         el("palettewindow").style.display = "none";
     };
 

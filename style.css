@@ -123,6 +123,25 @@ select {
 .tmppal:hover, .clrsel:hover {
     border: 1px solid gray;
 }
+.tmppal {
+    cursor: grab;
+}
+.tmppal.dragging {
+    opacity: 0.5;
+}
+.trashbin {
+    display: inline-block;
+    font-size: 24px;
+    margin-left: 15px;
+    vertical-align: middle;
+    cursor: default;
+    padding: 5px;
+    border: 2px dashed transparent;
+    border-radius: 5px;
+}
+.trashbin:hover {
+    border-color: #ccc;
+}
 
 .styled-select select {
    background: transparent;

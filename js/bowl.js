@@ -121,12 +121,8 @@ import * as PERSISTENCE from './persistence.js';
         el("showsegnum").onchange = drawCanvas;
         el("showratio").onchange = drawCanvas;
         el("showScales").onchange = drawCanvas;
-        el("segHupCoarse").onclick = setSegHeight;
-        el("segHupFine").onclick = setSegHeight;
-        el("segHdnFine").onclick = setSegHeight;
-        el("segHdnCoarse").onclick = setSegHeight;
-        el("segNup").onclick = setSegCnt;
-        el("segNdn").onclick = setSegCnt;
+        el("inptHeight").oninput = setSegHeightFromSlider;
+        el("inptSegments").oninput = setSegCntFromSlider;
         el("segLup").onclick = setSegL;
         el("segLdn").onclick = setSegL;
         el("segLreset").onclick = setSegL;
@@ -327,16 +323,28 @@ import * as PERSISTENCE from './persistence.js';
      Event handlers
     ======================*/
     function showMenu(event) {
+        // Use currentTarget to handle clicks on child elements (icons, spans)
         const s = {
             btnOptions: "mnuOptions",
             btnView: "mnuView",
             btnBowl: "mnuBowl",
             btnRing: "mnuRing",
             btnSeg: "mnuSeg"
-        }[event.target.id];
-        const e = el(s);
-        if (e.style.display == "none") { e.style.display = "inline"; }
-        else { e.style.display = "none"; }
+        }[event.currentTarget.id];
+        const menuEl = el(s);
+        const cardEl = event.currentTarget.closest('.tool-card');
+        
+        // Toggle using class for CSS transitions, with fallback to display
+        if (cardEl) {
+            cardEl.classList.toggle('collapsed');
+        }
+        // Also toggle display for backwards compatibility
+        if (menuEl.style.display === "none" || menuEl.classList.contains('hidden')) {
+            menuEl.style.display = "block";
+            menuEl.classList.remove('hidden');
+        } else if (menuEl.style.display === "block" || menuEl.style.display === "inline" || menuEl.style.display === "") {
+            menuEl.style.display = "none";
+        }
     }
 
     function range(start, stop, step = 1) {
@@ -469,9 +477,14 @@ import * as PERSISTENCE from './persistence.js';
 
     function mousePos(event, canvas) {
         event = (event ? event : window.event);
+        const rect = canvas.getBoundingClientRect();
+        // Scale mouse position to canvas internal coordinates
+        // (CSS may display canvas at different size than its internal resolution)
+        const scaleX = canvas.width / rect.width;
+        const scaleY = canvas.height / rect.height;
         return {
-            x: event.pageX - canvas.offsetLeft,
-            y: event.pageY - canvas.offsetTop
+            x: (event.clientX - rect.left) * scaleX,
+            y: (event.clientY - rect.top) * scaleY
         };
     }
 
@@ -491,23 +504,9 @@ import * as PERSISTENCE from './persistence.js';
         build3D();
     }
 
-    function setSegHeight(event) {
+    function setSegHeightFromSlider() {
         if (ctrl.selring != null) {
-            // Step sizes in mm (internal unit)
-            // mm mode: fine = 0.1mm, coarse = 0.5mm
-            // inch mode: fine = 1/64" = 0.397mm, coarse = 1/16" = 1.588mm
-            const fineStep = ctrl.inch ? 25.4 / 64 : 0.1;
-            const coarseStep = ctrl.inch ? 25.4 / 16 : 0.5;
-            
-            let delta = 0;
-            switch (event.target.id) {
-                case "segHupCoarse": delta = coarseStep; break;
-                case "segHupFine": delta = fineStep; break;
-                case "segHdnFine": delta = -fineStep; break;
-                case "segHdnCoarse": delta = -coarseStep; break;
-            }
-            
-            const newHeight = bowlprop.rings[ctrl.selring].height + delta;
+            const newHeight = parseFloat(el("inptHeight").value);
             if (newHeight > 0) {
                 bowlprop.rings[ctrl.selring].height = newHeight;
             }
@@ -517,24 +516,26 @@ import * as PERSISTENCE from './persistence.js';
         }
     }
 
-    function setSegCnt(event) {
-        if (event.target.id === "segNup") {
-            bowlprop.rings[ctrl.selring].segs += 1;
-            if (bowlprop.rings[ctrl.selring].clrs.length < bowlprop.rings[ctrl.selring].segs) {
+    function setSegCntFromSlider() {
+        if (ctrl.selring != null) {
+            const newSegs = parseInt(el("inptSegments").value);
+            const oldSegs = bowlprop.rings[ctrl.selring].segs;
+            
+            // Add colors/wood if increasing segments
+            while (bowlprop.rings[ctrl.selring].clrs.length < newSegs) {
                 bowlprop.rings[ctrl.selring].clrs.push(bowlprop.rings[ctrl.selring].clrs[bowlprop.rings[ctrl.selring].clrs.length - 1]);
             }
-            if (bowlprop.rings[ctrl.selring].wood.length < bowlprop.rings[ctrl.selring].segs) {
+            while (bowlprop.rings[ctrl.selring].wood.length < newSegs) {
                 bowlprop.rings[ctrl.selring].wood.push(bowlprop.rings[ctrl.selring].wood[bowlprop.rings[ctrl.selring].wood.length - 1]);
             }
-            bowlprop.rings[ctrl.selring].seglen = defaultLens(bowlprop.rings[ctrl.selring].segs); // just reset this
-        } else if (bowlprop.rings[ctrl.selring].segs > 3) {
-            bowlprop.rings[ctrl.selring].segs -= 1;
-            bowlprop.rings[ctrl.selring].seglen = defaultLens(bowlprop.rings[ctrl.selring].segs); // just reset this
+            
+            bowlprop.rings[ctrl.selring].segs = newSegs;
+            bowlprop.rings[ctrl.selring].seglen = defaultLens(newSegs);
+            ctrl.selseg = [];
+            setSegCntTxt();
+            drawCanvas();
+            build3D();
         }
-        ctrl.selseg = [];
-        setSegCntTxt();
-        drawCanvas();
-        build3D();
     }
 
     function setSegL(event) {
@@ -612,11 +613,17 @@ import * as PERSISTENCE from './persistence.js';
     }
 
     function setSegCntTxt() {
-        el("segNtxt").innerHTML = "Segments: ".concat(bowlprop.rings[ctrl.selring].segs);
+        if (ctrl.selring != null) {
+            el("segNtxt").innerHTML = bowlprop.rings[ctrl.selring].segs;
+            el("inptSegments").value = bowlprop.rings[ctrl.selring].segs;
+        }
     }
 
     function setRingHtxt() {
-        el("segHtxt").innerHTML = reduce(bowlprop.rings[ctrl.selring].height);
+        if (ctrl.selring != null) {
+            el("segHtxt").innerHTML = reduce(bowlprop.rings[ctrl.selring].height);
+            el("inptHeight").value = bowlprop.rings[ctrl.selring].height;
+        }
     }
 
     function setView(event) {
@@ -659,7 +666,7 @@ import * as PERSISTENCE from './persistence.js';
             thick.value = bowlprop.thick;
             pad.setAttribute("step", 25.4 / 16);
             pad.value = bowlprop.pad;
-            el("rptprec").style.visibility = "visible";
+            el("rptprec").style.display = "block";
             el("zoomTxt").innerHTML = 'View: ' + (view2d.canvasmm / 25.4).toFixed(0).concat('"');
         } else {
             // Display in mm (default) - internal values stay in mm (no rounding on unit switch)
@@ -669,7 +676,7 @@ import * as PERSISTENCE from './persistence.js';
             thick.value = bowlprop.thick;
             pad.setAttribute("step", 0.5);
             pad.value = bowlprop.pad;
-            el("rptprec").style.visibility = "hidden";
+            el("rptprec").style.display = "none";
             el("zoomTxt").innerHTML = 'View: ' + (view2d.canvasmm / 10).toFixed(0).concat(' cm');
         }
         thickChange();
@@ -702,6 +709,7 @@ import * as PERSISTENCE from './persistence.js';
 
     function zoom(event) {
         let inc, displayValue, unit;
+        const buttonId = event.currentTarget.id;
         if (ctrl.inch) {
             inc = 25.4;  // 1 inch in mm
             displayValue = view2d.canvasmm / 25.4;  // Convert mm to inches for display
@@ -711,8 +719,8 @@ import * as PERSISTENCE from './persistence.js';
             displayValue = view2d.canvasmm / 10;  // Convert mm to cm for display
             unit = ' cm';
         }
-        if (event.target.id === "zoomIn") { inc = -inc; }
-        if (event.target.id === "zoomIn" && view2d.canvasmm <= 50) { return; }  // Min ~50mm
+        if (buttonId === "zoomIn") { inc = -inc; }
+        if (buttonId === "zoomIn" && view2d.canvasmm <= 50) { return; }  // Min ~50mm
         const oldcp = screenToReal(view2d, bowlprop);
 
         view2d.canvasmm += inc;
@@ -769,24 +777,51 @@ import * as PERSISTENCE from './persistence.js';
     function updateRingInfo() {
         if (el("canvas2").style.display != "none" && ctrl.selring != null) {
             const step = 1 / parseInt(el("rptfmt").value);
-            let txt = ["Ring:", ctrl.selring.toString(), "<br>",
-                "Diameter:", reduce(bowlprop.rings[ctrl.selring].xvals.max * 2, step), "<br>",
-                "Thickness:", reduce(bowlprop.rings[ctrl.selring].height, step), '<br><hr align="left" width="20%">'];
             const seglist = getReportSegsList(bowlprop, ctrl.selring);
+            
+            // Build structured HTML with ring info and segment table
+            let html = `
+                <div class="info-section info-ring">
+                    <div class="info-item"><span class="info-label">Ring</span><span class="info-value">${ctrl.selring}</span></div>
+                    <div class="info-item"><span class="info-label">Diameter</span><span class="info-value">${reduce(bowlprop.rings[ctrl.selring].xvals.max * 2, step)}</span></div>
+                    <div class="info-item"><span class="info-label">Thickness</span><span class="info-value">${reduce(bowlprop.rings[ctrl.selring].height, step)}</span></div>
+                </div>
+                <div class="info-section info-segment">
+                    <table class="segment-table">
+                        <thead>
+                            <tr>
+                                <th>Segments</th>
+                                <th>Wood</th>
+                                <th>Angle</th>
+                                <th>Outside</th>
+                                <th>Inside</th>
+                                <th>Width</th>
+                                <th>Strip</th>
+                                <th>Total Strip</th>
+                            </tr>
+                        </thead>
+                        <tbody>`;
+            
             for (let seg = 0; seg < seglist.length; seg++) {
-                txt = txt.concat([
-                    "Segments:", seglist[seg].cnt, "<br>",
-                    "&nbsp;Wood:", capitalize(seglist[seg].wood), "<br>",
-                    "&nbsp;Angle:", seglist[seg].theta.toFixed(2).concat("&deg;"), "<br>",
-                    "&nbsp;Outside Length:", reduce(seglist[seg].outlen, step), "<br>",
-                    "&nbsp;Inside Length:", reduce(seglist[seg].inlen, step), "<br>",
-                    "&nbsp;Width:", reduce(seglist[seg].width, step), "<br>",
-                    "&nbsp;Strip Length:", reduce(seglist[seg].length, step), "<br>",
-                    "&nbsp;Total Strip Length:", reduce(seglist[seg].length + (ctrl.sawkerf * seglist[seg].cnt), step), "<br>",
-                    '<hr align="left" width="20%">'
-                ]);
+                html += `
+                            <tr>
+                                <td>${seglist[seg].cnt}</td>
+                                <td>${capitalize(seglist[seg].wood)}</td>
+                                <td>${seglist[seg].theta.toFixed(2)}°</td>
+                                <td>${reduce(seglist[seg].outlen, step)}</td>
+                                <td>${reduce(seglist[seg].inlen, step)}</td>
+                                <td>${reduce(seglist[seg].width, step)}</td>
+                                <td>${reduce(seglist[seg].length, step)}</td>
+                                <td>${reduce(seglist[seg].length + (ctrl.sawkerf * seglist[seg].cnt), step)}</td>
+                            </tr>`;
             }
-            el("report").innerHTML = txt.join(" ");
+            
+            html += `
+                        </tbody>
+                    </table>
+                </div>`;
+            
+            el("report").innerHTML = html;
         } else {
             el("report").innerHTML = "";
         }

@@ -2,7 +2,7 @@
 
 This is a Javascript/HTML app for designing segmented bowls to be turned on a lathe.
 
-Access the live version at [https://cdelker.bitbucket.io/segbowl/](http://cdelker.bitbucket.io/segbowl/).
+Access the live version at [https://www.pfefferholz.de/](http://www.pfefferholz.de/).
 
 Your browser must support WebGL and HTML5 and have Javascript enabled.
 
@@ -12,9 +12,7 @@ This is a client-side app, no servers are necessary. You may download the conten
 
 ## License
 
-Copyright 2017 Collin J. Delker. Released under the MIT License.
+This program is based on the work of Collin J. Delker from 2017. The original MIT License is included in this repository.
 
+Copyright 2026 Patrick Prill. Released under the MIT License.
 
-## Stuff to evaluate
-
-https://stackoverflow.com/a/60280113

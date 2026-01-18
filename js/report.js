@@ -1,5 +1,5 @@
 import { calcRingTrapz } from "./ring_calculator.js";
-import { clearCanvas, drawCurve, drawRing, drawSegProfile } from "./drawing.js";
+import { clearCanvas, drawCurve, drawRing, drawSegProfile, drawRingDiameterScale } from "./drawing.js";
 import { capitalize, reduce } from "./common.js";
 
 /** @typedef {import('./types.js').BowlProp} BowlProp */
@@ -65,6 +65,8 @@ export function createReport(nwindow, bowlprop, step, ctrl, view2d, view3d, styl
         for (let i = 0; i < bowlprop.usedrings; i++) {
             clearCanvas(bcanvas, ctx, view2d.canvas.height);
             drawRing(ctx, i, bowlprop, view2d, ctrl, style);
+            const ringRadius = bowlprop.rings[i].xvals.max;
+            drawRingDiameterScale(ctx, view2d, ringRadius, reduce(ringRadius * 2, step, ctrl));
             if (i > 0) {
                 ring_2d_pictures.innerHTML += ('<h3>Ring ' + i + '</h3> \n');
             } else {

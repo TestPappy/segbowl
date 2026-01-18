@@ -9,7 +9,7 @@ import { defaultColors, defaultWood, defaultLens, capitalize, reduce as reduceVa
 import { screenToRealPoint, realToScreen, screenToReal, calcBezPath, splitRingY, offsetCurve } from './bowl_calculator.js';
 import { calcRings } from './ring_calculator.js';
 import { createReport, getReportSegsList } from './report.js';
-import { clearCanvas, drawCurve, drawRing, drawSegProfile } from './drawing.js';
+import { clearCanvas, drawCurve, drawRing, drawSegProfile, drawWidthScale, drawHeightScale, drawRingDiameterScale } from './drawing.js';
 import { woodcolors, brightcolors, getWoodByColor, getColorName, getWoodColorKeys, getBrightColorKeys } from './palette.js';
 import * as PERSISTENCE from './persistence.js';
 
@@ -120,6 +120,7 @@ import * as PERSISTENCE from './persistence.js';
         el("showsegs").onchange = drawCanvas;
         el("showsegnum").onchange = drawCanvas;
         el("showratio").onchange = drawCanvas;
+        el("showScales").onchange = drawCanvas;
         el("segHupCoarse").onclick = setSegHeight;
         el("segHupFine").onclick = setSegHeight;
         el("segHdnFine").onclick = setSegHeight;
@@ -200,33 +201,15 @@ import * as PERSISTENCE from './persistence.js';
         ctx.stroke();
     }
 
-    function drawScale(ctx, size) {
-        const topleft = realToScreen(view2d, -bowlprop.radius, bowlprop.height);
-        const botright = realToScreen(view2d, bowlprop.radius, 0);
-        const middleX = (botright.x + topleft.x)/2;
-        ctx.lineWidth = 1;
-        ctx.strokeStyle = "#000000";
-        ctx.beginPath();
-        ctx.moveTo(middleX, 10);
-        ctx.lineTo(botright.x, 10);
-        ctx.moveTo(middleX, 5);
-        ctx.lineTo(middleX, 15);
-        ctx.moveTo(botright.x, 5);
-        ctx.lineTo(botright.x, 15);
-        ctx.stroke();
-
-        ctx.fillStyle = "black";
-        ctx.font = "12px Arial";
-        ctx.textAlign = "center";
-        ctx.fillText(size, (middleX + botright.x)/2, 25);
-        ctx.stroke();
-    }
-
     function getMaxRadius() {
         const radii = bowlprop.rings
             .map(r => (r.xvals && typeof r.xvals.max === 'number') ? r.xvals.max : 0);
         const maxRadius = Math.max(...radii, 0);
         return reduce(maxRadius);
+    }
+
+    function getTotalHeight() {
+        return reduce(bowlprop.height);
     }
 
     function drawControlPoints(ctx) {
@@ -276,9 +259,16 @@ import * as PERSISTENCE from './persistence.js';
         drawControlLines(view2d.ctx);
         drawCurve(view2d.ctx, bowlprop, view2d, style);
         drawControlPoints(view2d.ctx);
-        drawScale(view2d.ctx, getMaxRadius());
+        if (el("showScales").checked) {
+            drawWidthScale(view2d.ctx, view2d, bowlprop, getMaxRadius());
+            drawHeightScale(view2d.ctx, view2d, bowlprop, getTotalHeight());
+        }
         if (el("canvas2").style.display != "none" && ctrl.selring != null) {
             drawRing(view2d.ctx2, ctrl.selring, bowlprop, view2d, ctrl, style);
+            if (el("showScales").checked) {
+                const ring = bowlprop.rings[ctrl.selring];
+                drawRingDiameterScale(view2d.ctx2, view2d, ring.xvals.max, reduce(ring.xvals.max * 2));
+            }
         }
         updateRingInfo();
     }

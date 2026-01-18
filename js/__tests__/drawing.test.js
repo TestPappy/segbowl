@@ -5,7 +5,7 @@
  * the functions execute without errors and produce expected side effects.
  */
 
-import { clearCanvas, drawCurve, drawSegProfile, drawRing } from '../drawing.js';
+import { clearCanvas, drawCurve, drawSegProfile, drawRing, drawWidthScale, drawHeightScale, drawRingDiameterScale } from '../drawing.js';
 import { calcRings, calcRingTrapz } from '../ring_calculator.js';
 import { defaultColors, defaultWood, defaultLens } from '../common.js';
 
@@ -42,7 +42,11 @@ function createMockContext() {
         canvas: { width: 500, height: 500 },
         fillText: jest.fn(),
         font: null,
-        textAlign: null
+        textAlign: null,
+        save: jest.fn(),
+        restore: jest.fn(),
+        translate: jest.fn(),
+        rotate: jest.fn()
     };
 }
 
@@ -67,6 +71,8 @@ function createMockBowlprop(view2d) {
     return {
         thick: 6,
         pad: 3,
+        radius: 50,  // Bowl radius in mm
+        height: 80,  // Bowl height in mm
         cpoint: [
             { x: centerx + 38 * scale, y: view2d.bottom },
             { x: centerx + 50 * scale, y: view2d.bottom },
@@ -637,5 +643,256 @@ describe('drawRing', () => {
         
         // Should still draw all segments
         expect(bowlprop.seltrapz.length).toBe(6);
+    });
+});
+
+// =============================================================================
+// TEST CASES FOR: drawWidthScale
+// =============================================================================
+describe('drawWidthScale', () => {
+    it('draws a horizontal line with tick marks', () => {
+        const view2d = createMockView2d();
+        const bowlprop = createMockBowlprop(view2d);
+        const ctx = createMockContext();
+        
+        drawWidthScale(ctx, view2d, bowlprop, "50 mm");
+        
+        // Should call beginPath
+        expect(ctx.beginPath).toHaveBeenCalled();
+        
+        // Should draw lines (moveTo/lineTo calls for scale line and tick marks)
+        expect(ctx.moveTo).toHaveBeenCalled();
+        expect(ctx.lineTo).toHaveBeenCalled();
+        
+        // Should stroke the path
+        expect(ctx.stroke).toHaveBeenCalled();
+    });
+
+    it('displays the size label', () => {
+        const view2d = createMockView2d();
+        const bowlprop = createMockBowlprop(view2d);
+        const ctx = createMockContext();
+        
+        drawWidthScale(ctx, view2d, bowlprop, "100 mm");
+        
+        // Should call fillText with the size label
+        expect(ctx.fillText).toHaveBeenCalledWith("100 mm", expect.any(Number), 25);
+    });
+
+    it('sets correct styling for scale', () => {
+        const view2d = createMockView2d();
+        const bowlprop = createMockBowlprop(view2d);
+        const ctx = createMockContext();
+        
+        drawWidthScale(ctx, view2d, bowlprop, "50 mm");
+        
+        // Should set black color for stroke and fill
+        expect(ctx.strokeStyle).toBe("#000000");
+        expect(ctx.fillStyle).toBe("black");
+        expect(ctx.lineWidth).toBe(1);
+    });
+
+    it('uses Arial font for label', () => {
+        const view2d = createMockView2d();
+        const bowlprop = createMockBowlprop(view2d);
+        const ctx = createMockContext();
+        
+        drawWidthScale(ctx, view2d, bowlprop, "50 mm");
+        
+        expect(ctx.font).toBe("12px Arial");
+        expect(ctx.textAlign).toBe("center");
+    });
+
+    it('draws tick marks at start and end', () => {
+        const view2d = createMockView2d();
+        const bowlprop = createMockBowlprop(view2d);
+        const ctx = createMockContext();
+        
+        drawWidthScale(ctx, view2d, bowlprop, "50 mm");
+        
+        // moveTo is called: once for main line start, twice for each tick mark (4 total)
+        // lineTo is called: once for main line end, twice for each tick mark (3 total)
+        expect(ctx.moveTo.mock.calls.length).toBeGreaterThanOrEqual(3);
+        expect(ctx.lineTo.mock.calls.length).toBeGreaterThanOrEqual(3);
+    });
+});
+
+// =============================================================================
+// TEST CASES FOR: drawHeightScale
+// =============================================================================
+describe('drawHeightScale', () => {
+    it('draws a vertical line with tick marks', () => {
+        const view2d = createMockView2d();
+        const bowlprop = createMockBowlprop(view2d);
+        const ctx = createMockContext();
+        
+        drawHeightScale(ctx, view2d, bowlprop, "80 mm");
+        
+        // Should call beginPath
+        expect(ctx.beginPath).toHaveBeenCalled();
+        
+        // Should draw lines
+        expect(ctx.moveTo).toHaveBeenCalled();
+        expect(ctx.lineTo).toHaveBeenCalled();
+        
+        // Should stroke the path
+        expect(ctx.stroke).toHaveBeenCalled();
+    });
+
+    it('displays the height label rotated', () => {
+        const view2d = createMockView2d();
+        const bowlprop = createMockBowlprop(view2d);
+        const ctx = createMockContext();
+        
+        drawHeightScale(ctx, view2d, bowlprop, "80 mm");
+        
+        // Should save, translate, rotate for vertical text
+        expect(ctx.save).toHaveBeenCalled();
+        expect(ctx.translate).toHaveBeenCalled();
+        expect(ctx.rotate).toHaveBeenCalledWith(-Math.PI / 2);
+        expect(ctx.fillText).toHaveBeenCalledWith("80 mm", 0, 0);
+        expect(ctx.restore).toHaveBeenCalled();
+    });
+
+    it('positions scale on left side of canvas', () => {
+        const view2d = createMockView2d();
+        const bowlprop = createMockBowlprop(view2d);
+        const ctx = createMockContext();
+        
+        drawHeightScale(ctx, view2d, bowlprop, "80 mm");
+        
+        // The scale should be drawn at x=10 (left side)
+        const moveToX = ctx.moveTo.mock.calls[0][0];
+        expect(moveToX).toBe(10);
+    });
+
+    it('sets correct styling for scale', () => {
+        const view2d = createMockView2d();
+        const bowlprop = createMockBowlprop(view2d);
+        const ctx = createMockContext();
+        
+        drawHeightScale(ctx, view2d, bowlprop, "80 mm");
+        
+        expect(ctx.strokeStyle).toBe("#000000");
+        expect(ctx.fillStyle).toBe("black");
+        expect(ctx.lineWidth).toBe(1);
+    });
+
+    it('draws tick marks at top and bottom', () => {
+        const view2d = createMockView2d();
+        const bowlprop = createMockBowlprop(view2d);
+        const ctx = createMockContext();
+        
+        drawHeightScale(ctx, view2d, bowlprop, "80 mm");
+        
+        // Should have multiple moveTo/lineTo calls for tick marks
+        expect(ctx.moveTo.mock.calls.length).toBeGreaterThanOrEqual(3);
+        expect(ctx.lineTo.mock.calls.length).toBeGreaterThanOrEqual(3);
+    });
+});
+
+// =============================================================================
+// TEST CASES FOR: drawRingDiameterScale
+// =============================================================================
+describe('drawRingDiameterScale', () => {
+    it('draws a vertical line spanning the ring diameter', () => {
+        const view2d = createMockView2d();
+        const ctx = createMockContext();
+        const radius = 45;  // mm
+        
+        drawRingDiameterScale(ctx, view2d, radius, "90 mm");
+        
+        // Should call beginPath
+        expect(ctx.beginPath).toHaveBeenCalled();
+        
+        // Should draw lines
+        expect(ctx.moveTo).toHaveBeenCalled();
+        expect(ctx.lineTo).toHaveBeenCalled();
+        
+        // Should stroke the path
+        expect(ctx.stroke).toHaveBeenCalled();
+    });
+
+    it('displays the diameter label rotated', () => {
+        const view2d = createMockView2d();
+        const ctx = createMockContext();
+        
+        drawRingDiameterScale(ctx, view2d, 45, "90 mm");
+        
+        // Should save, translate, rotate for vertical text
+        expect(ctx.save).toHaveBeenCalled();
+        expect(ctx.translate).toHaveBeenCalled();
+        expect(ctx.rotate).toHaveBeenCalledWith(-Math.PI / 2);
+        expect(ctx.fillText).toHaveBeenCalledWith("90 mm", 0, 0);
+        expect(ctx.restore).toHaveBeenCalled();
+    });
+
+    it('positions scale on left side of ring canvas', () => {
+        const view2d = createMockView2d();
+        const ctx = createMockContext();
+        
+        drawRingDiameterScale(ctx, view2d, 45, "90 mm");
+        
+        // The scale should be drawn at x=10 (left side)
+        const moveToX = ctx.moveTo.mock.calls[0][0];
+        expect(moveToX).toBe(10);
+    });
+
+    it('calculates correct scale based on radius and view scale', () => {
+        const view2d = createMockView2d();
+        const ctx = createMockContext();
+        const radius = 50;  // mm
+        const expectedScreenRadius = radius * view2d.scale;
+        const centerY = ctx.canvas.height / 2;
+        
+        drawRingDiameterScale(ctx, view2d, radius, "100 mm");
+        
+        // The vertical line should span from (centerY - screenRadius) to (centerY + screenRadius)
+        const topY = centerY - expectedScreenRadius;
+        const bottomY = centerY + expectedScreenRadius;
+        
+        // First moveTo should be at top
+        expect(ctx.moveTo.mock.calls[0]).toEqual([10, topY]);
+        // First lineTo should be at bottom
+        expect(ctx.lineTo.mock.calls[0]).toEqual([10, bottomY]);
+    });
+
+    it('draws tick marks at top and bottom of scale', () => {
+        const view2d = createMockView2d();
+        const ctx = createMockContext();
+        
+        drawRingDiameterScale(ctx, view2d, 45, "90 mm");
+        
+        // Should have multiple moveTo/lineTo calls for tick marks
+        expect(ctx.moveTo.mock.calls.length).toBeGreaterThanOrEqual(3);
+        expect(ctx.lineTo.mock.calls.length).toBeGreaterThanOrEqual(3);
+    });
+
+    it('handles different radius values', () => {
+        const radii = [30, 50, 75];
+        
+        radii.forEach(radius => {
+            const view2d = createMockView2d();
+            const ctx = createMockContext();
+            
+            expect(() => drawRingDiameterScale(ctx, view2d, radius, `${radius * 2} mm`)).not.toThrow();
+            
+            // Verify the scale is drawn
+            expect(ctx.stroke).toHaveBeenCalled();
+            expect(ctx.fillText).toHaveBeenCalled();
+        });
+    });
+
+    it('sets correct styling for scale', () => {
+        const view2d = createMockView2d();
+        const ctx = createMockContext();
+        
+        drawRingDiameterScale(ctx, view2d, 45, "90 mm");
+        
+        expect(ctx.strokeStyle).toBe("#000000");
+        expect(ctx.fillStyle).toBe("black");
+        expect(ctx.lineWidth).toBe(1);
+        expect(ctx.font).toBe("12px Arial");
+        expect(ctx.textAlign).toBe("center");
     });
 });

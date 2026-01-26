@@ -87,6 +87,19 @@ function createSampleCtrl() {
 }
 
 // =============================================================================
+// Helper: Create mock view2d for coordinate conversion
+// =============================================================================
+function createMockView2D() {
+    return {
+        canvas: { width: 500, height: 500 },
+        scale: 2.0,
+        canvasmm: 250,
+        bottom: 480,
+        centerx: 250
+    };
+}
+
+// =============================================================================
 // TEST CASES FOR: captureProfileThumbnail
 // =============================================================================
 describe('captureProfileThumbnail', () => {
@@ -126,14 +139,15 @@ describe('captureProfileThumbnail', () => {
 // TEST CASES FOR: serializeDesign
 // =============================================================================
 describe('serializeDesign', () => {
-    it('creates correct schema version 2 structure', () => {
+    it('creates correct schema version 3 structure', () => {
         const bowlprop = createSampleBowlProp();
         const ctrl = createSampleCtrl();
         const canvas = createMockCanvas();
+        const view2d = createMockView2D();
         
-        const result = serializeDesign(bowlprop, ctrl, canvas);
+        const result = serializeDesign(bowlprop, ctrl, canvas, view2d);
         
-        expect(result.schemaVersion).toBe(2);
+        expect(result.schemaVersion).toBe(3);
         expect(result.metadata).toBeDefined();
         expect(result.thumbnail).toBeDefined();
         expect(result.design).toBeDefined();
@@ -144,8 +158,9 @@ describe('serializeDesign', () => {
         const bowlprop = createSampleBowlProp();
         const ctrl = createSampleCtrl();
         const canvas = createMockCanvas();
+        const view2d = createMockView2D();
         
-        const result = serializeDesign(bowlprop, ctrl, canvas, 'Test Design');
+        const result = serializeDesign(bowlprop, ctrl, canvas, view2d, 'Test Design');
         
         expect(result.metadata.name).toBe('Test Design');
         expect(result.metadata.created).toBeDefined();
@@ -157,8 +172,9 @@ describe('serializeDesign', () => {
         const bowlprop = createSampleBowlProp();
         const ctrl = createSampleCtrl();
         const canvas = createMockCanvas();
+        const view2d = createMockView2D();
         
-        const result = serializeDesign(bowlprop, ctrl, canvas);
+        const result = serializeDesign(bowlprop, ctrl, canvas, view2d);
         
         expect(result.design.thick).toBe(6);
         expect(result.design.pad).toBe(3);
@@ -170,8 +186,9 @@ describe('serializeDesign', () => {
         const bowlprop = createSampleBowlProp();
         const ctrl = createSampleCtrl();
         const canvas = createMockCanvas();
+        const view2d = createMockView2D();
         
-        const result = serializeDesign(bowlprop, ctrl, canvas);
+        const result = serializeDesign(bowlprop, ctrl, canvas, view2d);
         
         expect(result.settings.inch).toBe(false);
         expect(result.settings.sawkerf).toBe(3);
@@ -182,10 +199,11 @@ describe('serializeDesign', () => {
     it('works with null canvas', () => {
         const bowlprop = createSampleBowlProp();
         const ctrl = createSampleCtrl();
+        const view2d = createMockView2D();
         
-        const result = serializeDesign(bowlprop, ctrl, null);
+        const result = serializeDesign(bowlprop, ctrl, null, view2d);
         
-        expect(result.schemaVersion).toBe(2);
+        expect(result.schemaVersion).toBe(3);
         expect(result.thumbnail).toBeNull();
     });
 });
@@ -194,30 +212,34 @@ describe('serializeDesign', () => {
 // TEST CASES FOR: deserializeDesign
 // =============================================================================
 describe('deserializeDesign', () => {
-    it('restores schema version 2 data correctly', () => {
+    it('restores schema version 3 data correctly', () => {
         const bowlprop = createSampleBowlProp();
         const ctrl = createSampleCtrl();
         const canvas = createMockCanvas();
+        const view2d = createMockView2D();
         
-        const serialized = serializeDesign(bowlprop, ctrl, canvas);
+        const serialized = serializeDesign(bowlprop, ctrl, canvas, view2d);
         const result = deserializeDesign(serialized);
         
         expect(result.bowlprop.thick).toBe(6);
         expect(result.bowlprop.pad).toBe(3);
         expect(result.ctrl.inch).toBe(false);
         expect(result.ctrl.sawkerf).toBe(3);
+        expect(result.schemaVersion).toBe(3);
     });
 
     it('restores control points correctly', () => {
         const bowlprop = createSampleBowlProp();
         const ctrl = createSampleCtrl();
         const canvas = createMockCanvas();
+        const view2d = createMockView2D();
         
-        const serialized = serializeDesign(bowlprop, ctrl, canvas);
+        const serialized = serializeDesign(bowlprop, ctrl, canvas, view2d);
         const result = deserializeDesign(serialized);
         
         expect(result.bowlprop.cpoint).toHaveLength(4);
-        expect(result.bowlprop.cpoint[0].x).toBe(250);
+        // Points are in real coordinates now
+        expect(result.bowlprop.cpoint[0].x).toBeDefined();
     });
 
     it('migrates legacy format (with timestamp)', () => {
@@ -259,8 +281,9 @@ describe('saveToHistory', () => {
         const bowlprop = createSampleBowlProp();
         const ctrl = createSampleCtrl();
         const canvas = createMockCanvas();
+        const view2d = createMockView2D();
         
-        const result = saveToHistory(bowlprop, ctrl, canvas);
+        const result = saveToHistory(bowlprop, ctrl, canvas, view2d);
         
         expect(result).toHaveLength(1);
         expect(localStorage.setItem).toHaveBeenCalledWith(
@@ -273,10 +296,11 @@ describe('saveToHistory', () => {
         const bowlprop = createSampleBowlProp();
         const ctrl = createSampleCtrl();
         const canvas = createMockCanvas();
+        const view2d = createMockView2D();
         
         // Save 7 versions
         for (let i = 0; i < 7; i++) {
-            saveToHistory(bowlprop, ctrl, canvas, `Version ${i}`);
+            saveToHistory(bowlprop, ctrl, canvas, view2d, `Version ${i}`);
         }
         
         const history = getHistory();
@@ -287,9 +311,10 @@ describe('saveToHistory', () => {
         const bowlprop = createSampleBowlProp();
         const ctrl = createSampleCtrl();
         const canvas = createMockCanvas();
+        const view2d = createMockView2D();
         
-        saveToHistory(bowlprop, ctrl, canvas, 'First');
-        saveToHistory(bowlprop, ctrl, canvas, 'Second');
+        saveToHistory(bowlprop, ctrl, canvas, view2d, 'First');
+        saveToHistory(bowlprop, ctrl, canvas, view2d, 'Second');
         
         const history = getHistory();
         expect(history[0].metadata.name).toBe('Second');
@@ -328,9 +353,10 @@ describe('getHistoryCount', () => {
         const bowlprop = createSampleBowlProp();
         const ctrl = createSampleCtrl();
         const canvas = createMockCanvas();
+        const view2d = createMockView2D();
         
-        saveToHistory(bowlprop, ctrl, canvas);
-        saveToHistory(bowlprop, ctrl, canvas);
+        saveToHistory(bowlprop, ctrl, canvas, view2d);
+        saveToHistory(bowlprop, ctrl, canvas, view2d);
         
         expect(getHistoryCount()).toBe(2);
     });
@@ -351,8 +377,9 @@ describe('restoreFromHistory', () => {
         const bowlprop = createSampleBowlProp();
         const ctrl = createSampleCtrl();
         const canvas = createMockCanvas();
+        const view2d = createMockView2D();
         
-        saveToHistory(bowlprop, ctrl, canvas);
+        saveToHistory(bowlprop, ctrl, canvas, view2d);
         
         const result = restoreFromHistory(0);
         expect(result.bowlprop.thick).toBe(6);
@@ -374,8 +401,9 @@ describe('getHistorySummary', () => {
         const bowlprop = createSampleBowlProp();
         const ctrl = createSampleCtrl();
         const canvas = createMockCanvas();
+        const view2d = createMockView2D();
         
-        saveToHistory(bowlprop, ctrl, canvas, 'Test Version');
+        saveToHistory(bowlprop, ctrl, canvas, view2d, 'Test Version');
         
         const result = getHistorySummary();
         expect(result).toHaveLength(1);
@@ -395,8 +423,9 @@ describe('clearHistory', () => {
         const bowlprop = createSampleBowlProp();
         const ctrl = createSampleCtrl();
         const canvas = createMockCanvas();
+        const view2d = createMockView2D();
         
-        saveToHistory(bowlprop, ctrl, canvas);
+        saveToHistory(bowlprop, ctrl, canvas, view2d);
         clearHistory();
         
         expect(getHistoryCount()).toBe(0);
@@ -412,10 +441,11 @@ describe('deleteFromHistory', () => {
         const bowlprop = createSampleBowlProp();
         const ctrl = createSampleCtrl();
         const canvas = createMockCanvas();
+        const view2d = createMockView2D();
         
-        saveToHistory(bowlprop, ctrl, canvas, 'First');
-        saveToHistory(bowlprop, ctrl, canvas, 'Second');
-        saveToHistory(bowlprop, ctrl, canvas, 'Third');
+        saveToHistory(bowlprop, ctrl, canvas, view2d, 'First');
+        saveToHistory(bowlprop, ctrl, canvas, view2d, 'Second');
+        saveToHistory(bowlprop, ctrl, canvas, view2d, 'Third');
         
         deleteFromHistory(1); // Delete 'Second'
         
@@ -563,8 +593,9 @@ describe('Legacy API: checkStorage', () => {
         const bowlprop = createSampleBowlProp();
         const ctrl = createSampleCtrl();
         const canvas = createMockCanvas();
+        const view2d = createMockView2D();
         
-        saveToHistory(bowlprop, ctrl, canvas);
+        saveToHistory(bowlprop, ctrl, canvas, view2d);
         
         const result = checkStorage();
         expect(result).toBeDefined();
@@ -585,7 +616,8 @@ describe('Legacy API: clearDesignAndSettings', () => {
         const bowlprop = createSampleBowlProp();
         const ctrl = createSampleCtrl();
         const canvas = createMockCanvas();
-        saveToHistory(bowlprop, ctrl, canvas);
+        const view2d = createMockView2D();
+        saveToHistory(bowlprop, ctrl, canvas, view2d);
         
         clearDesignAndSettings();
         

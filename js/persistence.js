@@ -3,8 +3,10 @@
  * Handles file export/import, version history, and localStorage management
  */
 
+import { screenToReal } from './bowl_calculator.js';
+
 // Constants
-const SCHEMA_VERSION = 2;
+const SCHEMA_VERSION = 3;
 const HISTORY_KEY = 'bowlHistory';
 const MAX_VERSIONS = 5;
 const APP_VERSION = '0.2';
@@ -54,13 +56,14 @@ export function captureProfileThumbnail(canvas, maxSize = 200) {
 /**
  * Extract only essential design data from bowlprop (exclude computed fields)
  * @param {Object} bowlprop - The bowl properties object
+ * @param {Object} view2d - The 2D view configuration
  * @returns {Object} Clean design data
  */
-function extractDesignData(bowlprop) {
+function extractDesignData(bowlprop, view2d) {
     return {
         thick: bowlprop.thick,
         pad: bowlprop.pad,
-        cpoint: bowlprop.cpoint ? bowlprop.cpoint.map(p => ({ x: p.x, y: p.y })) : null,
+        cpoint: bowlprop.cpoint ? screenToReal(view2d, bowlprop).map(p => ({ x: p.x, y: p.y })) : null,
         curvesegs: bowlprop.curvesegs,
         rings: bowlprop.rings ? bowlprop.rings.map(ring => ({
             height: ring.height,
@@ -141,11 +144,12 @@ function restoreCtrl(settings) {
  * @param {Object} bowlprop - The bowl properties
  * @param {Object} ctrl - The control state
  * @param {HTMLCanvasElement} canvas - The profile canvas for thumbnail
+ * @param {Object} view2d - The 2D view configuration
  * @param {string|null} name - Optional name for the design
  * @param {string|null} existingCreated - Preserve original created timestamp
  * @returns {Object} Serialized design object
  */
-export function serializeDesign(bowlprop, ctrl, canvas, name = null, existingCreated = null) {
+export function serializeDesign(bowlprop, ctrl, canvas, view2d, name = null, existingCreated = null) {
     const now = new Date().toISOString();
     return {
         schemaVersion: SCHEMA_VERSION,
@@ -156,7 +160,7 @@ export function serializeDesign(bowlprop, ctrl, canvas, name = null, existingCre
             appVersion: APP_VERSION
         },
         thumbnail: captureProfileThumbnail(canvas),
-        design: extractDesignData(bowlprop),
+        design: extractDesignData(bowlprop, view2d),
         settings: extractSettings(ctrl)
     };
 }
@@ -172,12 +176,13 @@ export function deserializeDesign(data) {
         return migrateLegacyFormat(data);
     }
     
-    // Schema version 2
+    // Schema version 2+
     return {
         bowlprop: restoreBowlProp(data.design),
         ctrl: restoreCtrl(data.settings),
         metadata: data.metadata,
-        thumbnail: data.thumbnail
+        thumbnail: data.thumbnail,
+        schemaVersion: data.schemaVersion
     };
 }
 
@@ -224,7 +229,8 @@ function migrateLegacyFormat(data) {
                 modified: data.timestamp,
                 appVersion: 'legacy'
             },
-            thumbnail: null
+            thumbnail: null,
+            schemaVersion: 1
         };
     }
     
@@ -233,7 +239,8 @@ function migrateLegacyFormat(data) {
         bowlprop: data,
         ctrl: restoreCtrl({ inch: false, sawkerf: 3 }),
         metadata: null,
-        thumbnail: null
+        thumbnail: null,
+        schemaVersion: 0
     };
 }
 
@@ -246,10 +253,11 @@ function migrateLegacyFormat(data) {
  * @param {Object} bowlprop - The bowl properties
  * @param {Object} ctrl - The control state
  * @param {HTMLCanvasElement} canvas - The profile canvas for thumbnail
+ * @param {Object} view2d - The 2D view configuration
  * @param {string} filename - The filename for download
  */
-export function exportToFile(bowlprop, ctrl, canvas, filename = 'bowl-design.json') {
-    const data = serializeDesign(bowlprop, ctrl, canvas);
+export function exportToFile(bowlprop, ctrl, canvas, view2d, filename = 'bowl-design.json') {
+    const data = serializeDesign(bowlprop, ctrl, canvas, view2d);
     const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
     const url = URL.createObjectURL(blob);
     
@@ -299,12 +307,13 @@ export function importFromFile(file) {
  * @param {Object} bowlprop - The bowl properties
  * @param {Object} ctrl - The control state
  * @param {HTMLCanvasElement} canvas - The profile canvas for thumbnail
+ * @param {Object} view2d - The 2D view configuration
  * @param {string|null} name - Optional name for this version
  * @returns {Array} Updated history array
  */
-export function saveToHistory(bowlprop, ctrl, canvas, name = null) {
+export function saveToHistory(bowlprop, ctrl, canvas, view2d, name = null) {
     const history = getHistory();
-    const entry = serializeDesign(bowlprop, ctrl, canvas, name);
+    const entry = serializeDesign(bowlprop, ctrl, canvas, view2d, name);
     
     // Add to front of array (most recent first)
     history.unshift(entry);

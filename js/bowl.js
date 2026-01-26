@@ -1017,7 +1017,7 @@ import * as PERSISTENCE from './persistence.js';
     function exportDesign() {
         const timestamp = new Date().toISOString().slice(0, 10);
         const filename = `bowl-design-${timestamp}.json`;
-        PERSISTENCE.exportToFile(bowlprop, ctrl, view2d.canvas, filename);
+        PERSISTENCE.exportToFile(bowlprop, ctrl, view2d.canvas, view2d, filename);
     }
 
     function importDesign(event) {
@@ -1028,6 +1028,15 @@ import * as PERSISTENCE from './persistence.js';
             .then(result => {
                 bowlprop = result.bowlprop;
                 ctrl = result.ctrl;
+
+                // If version 3 or higher, points are in real coordinates (mm)
+                // Convert to screen coordinates for the current view
+                if (result.schemaVersion >= 3 && bowlprop.cpoint) {
+                    for (let p = 0; p < bowlprop.cpoint.length; p++) {
+                        bowlprop.cpoint[p] = realToScreen(view2d, bowlprop.cpoint[p].x, bowlprop.cpoint[p].y);
+                    }
+                }
+
                 setUnit();
                 loadSawKerf();
                 drawCanvas();
@@ -1045,7 +1054,7 @@ import * as PERSISTENCE from './persistence.js';
       Version History
     ======================*/
     function saveVersion() {
-        PERSISTENCE.saveToHistory(bowlprop, ctrl, view2d.canvas);
+        PERSISTENCE.saveToHistory(bowlprop, ctrl, view2d.canvas, view2d);
         updateStorageInfo();
     }
 
@@ -1119,6 +1128,15 @@ import * as PERSISTENCE from './persistence.js';
         if (result) {
             bowlprop = result.bowlprop;
             ctrl = result.ctrl;
+
+            // If version 3 or higher, points are in real coordinates (mm)
+            // Convert to screen coordinates for the current view
+            if (result.schemaVersion >= 3 && bowlprop.cpoint) {
+                for (let p = 0; p < bowlprop.cpoint.length; p++) {
+                    bowlprop.cpoint[p] = realToScreen(view2d, bowlprop.cpoint[p].x, bowlprop.cpoint[p].y);
+                }
+            }
+
             setUnit();
             loadSawKerf();
             drawCanvas();

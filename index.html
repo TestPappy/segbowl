@@ -95,6 +95,22 @@
                     <span class="value" id="valPad">3.0 mm</span>
                 </div>
                 <input type="range" id="inptPad" min="0" max="12" value="3" step="0.5">
+                <hr>
+                <div class="form-row">
+                    <label>Resize</label>
+                    <div class="btn-group">
+                        <button id="bowlShrink" class="btn btn-secondary btn-sm">-10%</button>
+                        <button id="bowlGrow" class="btn btn-secondary btn-sm">+10%</button>
+                    </div>
+                </div>
+                <label class="flex items-center gap-sm mt-sm">
+                    <input type="checkbox" id="keepThick" checked>
+                    Keep wall thickness
+                </label>
+                <label class="flex items-center gap-sm mt-sm">
+                    <input type="checkbox" id="keepRingHeight">
+                    Keep ring height
+                </label>
             </div>
         </div>
 

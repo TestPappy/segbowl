@@ -117,6 +117,8 @@ import * as PERSISTENCE from './persistence.js';
         el("zoomOut").onclick = zoom;
         el("inptThick").oninput = thickChange;
         el("inptPad").oninput = padChange;
+        el("bowlShrink").onclick = resizeBowl;
+        el("bowlGrow").onclick = resizeBowl;
         el("showsegs").onchange = drawCanvas;
         el("showsegnum").onchange = drawCanvas;
         el("showratio").onchange = drawCanvas;
@@ -518,6 +520,55 @@ import * as PERSISTENCE from './persistence.js';
         const slider = el("inptPad");
         bowlprop.pad = Number(slider.value);
         el("valPad").innerHTML = reduce(bowlprop.pad);
+        drawCanvas();
+        build3D();
+    }
+
+    function resizeBowl(event) {
+        const factor = event.target.id === "bowlGrow" ? 1.1 : 0.9;
+        // Scale control points in real-world coordinates
+        const realPoints = screenToReal(view2d, bowlprop);
+        const scaledReal = realPoints.map(p => ({ x: p.x * factor, y: p.y * factor }));
+        // When growing, expand zoom if bowl would exceed the visible area
+        if (factor > 1) {
+            let maxX = 0, maxY = 0;
+            for (const p of scaledReal) {
+                if (Math.abs(p.x) > maxX) { maxX = Math.abs(p.x); }
+                if (p.y > maxY) { maxY = p.y; }
+            }
+            const neededMm = Math.max(maxX * 2, maxY + 12.7) * 1.1; // 10% margin
+            if (neededMm > view2d.canvasmm) {
+                const step = ctrl.inch ? 25.4 : 10;
+                view2d.canvasmm = Math.ceil(neededMm / step) * step;
+                view2d.scale = view2d.ctx.canvas.width / view2d.canvasmm;
+                view2d.bottom = view2d.canvas.height - 12.7 * view2d.scale;
+                view2d.centerx = view2d.canvas.width / 2;
+                if (ctrl.inch) {
+                    el("zoomTxt").innerHTML = 'View: ' + (view2d.canvasmm / 25.4).toFixed(0).concat('"');
+                } else {
+                    el("zoomTxt").innerHTML = 'View: ' + (view2d.canvasmm / 10).toFixed(0).concat(' cm');
+                }
+            }
+        }
+        // Convert scaled real points to screen coordinates (using potentially updated view)
+        for (const p in scaledReal) {
+            bowlprop.cpoint[p] = realToScreen(view2d, scaledReal[p].x, scaledReal[p].y);
+        }
+        // Scale wall thickness if not kept fixed
+        if (!el("keepThick").checked) {
+            bowlprop.thick *= factor;
+            el("inptThick").value = bowlprop.thick;
+            el("valThick").innerHTML = reduce(bowlprop.thick);
+        }
+        // Scale ring heights (unless kept fixed — calcRings will add new rings)
+        if (!el("keepRingHeight").checked) {
+            for (let i = 0; i < bowlprop.rings.length; i++) {
+                bowlprop.rings[i].height *= factor;
+            }
+        }
+        // Update UI if a ring is selected
+        setRingHtxt();
+        setSegCntTxt();
         drawCanvas();
         build3D();
     }

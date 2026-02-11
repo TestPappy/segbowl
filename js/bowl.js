@@ -615,6 +615,10 @@ import * as PERSISTENCE from './persistence.js';
             for (const c in bowlprop.rings[ctrl.copyring].wood) { bowlprop.rings[ctrl.selring].wood.push(bowlprop.rings[ctrl.copyring].wood[c]); }
             for (const c in bowlprop.rings[ctrl.copyring].seglen) { bowlprop.rings[ctrl.selring].seglen.push(bowlprop.rings[ctrl.copyring].seglen[c]); }
             ctrl.copyring = null;
+            ctrl.selseg = [];
+            setRingHtxt();
+            setSegCntTxt();
+            el("ringrot").value = bowlprop.rings[ctrl.selring].theta * 180 / Math.PI;
             drawCanvas();
             build3D();
         }
